@@ -4,7 +4,6 @@ One method per `ui.messages` type; `ui/app.py`'s poll timer dispatches into
 this mixin by message type.
 """
 
-from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
 from app.dialogue.strings import EMPTY_TRANSCRIPT_TEXT
 from app.intents.models import Speaker
 from app.ui import strings
@@ -84,10 +83,9 @@ class JarvisDispatchHandlers:
         self.status_bar.set_emotion_reading(sample.reading)
         if sample.reading is None:
             return
-        emotion, confidence = sample.reading
-        if confidence >= EMOTION_LOW_CONFIDENCE_THRESHOLD:
-            self._conversation.set_last_emotion(emotion)
-            self.avatar_pane.set_emotion(emotion)
+        emotion, _confidence = sample.reading
+        self._conversation.set_last_emotion(emotion)
+        self.avatar_pane.set_emotion(emotion)
 
     def _on_error_occurred(self, message: ErrorOccurred) -> None:
         """Report a background failure as a short red line in the status strip.

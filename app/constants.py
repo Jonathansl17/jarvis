@@ -56,10 +56,9 @@ CAMERA_WARMUP_FRAMES = 10
 # drawn live.
 CAMERA_FRAME_INTERVAL_SECONDS = 1 / 15
 EMOTION_SAMPLE_INTERVAL_SECONDS = 2.0
-# Below this softmax confidence, an emotion reading is reported as uncertain
-# rather than shown as a specific label, both in the status bar and the
-# avatar overlay.
-EMOTION_LOW_CONFIDENCE_THRESHOLD = 0.40
+# The winning emotion always drives the avatar and the tone: with seven
+# classes a webcam reading rarely exceeds 50 percent, so the confidence is
+# shown for information only.
 
 STT_SAMPLE_RATE_HZ = 16000
 WHISPER_MODEL_SIZE = "small"
