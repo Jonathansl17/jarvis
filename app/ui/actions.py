@@ -6,7 +6,6 @@ from textual.widgets import Input
 
 from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
 from app.dialogue.strings import EMPTY_TRANSCRIPT_TEXT
-from app.emotion.protocol import Emotion
 from app.errors import SpeechRecognitionError, SynthesisError
 from app.intents.models import Speaker
 from app.ui.frames import AvatarState
@@ -17,9 +16,10 @@ from app.ui.messages import (
     TranscriptReady,
 )
 from app.ui.widgets.avatar_pane import AvatarPane
+from app.ui.widgets.camera_preview import CameraPreview
 from app.ui.widgets.conversation_log import ConversationLog
 from app.ui.widgets.status_bar import MIC_GRABANDO, MIC_LISTO, MIC_PROCESANDO, StatusBar
-from app.workers.emotion_sampling import sample_emotion_forever
+from app.workers.emotion_sampling import EmotionSample, sample_emotion_forever
 from app.workers.listening import listen
 from app.workers.speaking import speak
 
@@ -27,21 +27,13 @@ _EMOTION_WORKER_GROUP = "emotion"
 _LISTENING_WORKER_GROUP = "listening"
 _TURN_WORKER_GROUP = "turn"
 _SPEAKING_WORKER_GROUP = "speaking"
-_SPACE = " "
 
 
 class JarvisActions:
     """Mixin holding `JarvisApp`'s bindings, actions, and message handlers."""
 
     def action_toggle_recording(self) -> None:
-        """Start recording on the first press, stop and transcribe on the second.
-
-        While the user is typing, space keeps its normal meaning.
-        """
-        input_line = self.query_one("#input-line", Input)
-        if input_line.value and not self._recording:
-            input_line.insert_text_at_cursor(_SPACE)
-            return
+        """Start recording on the first press, stop and transcribe on the second."""
         if self._recording:
             self._recording = False
             self.query_one(StatusBar).set_mic_state(MIC_PROCESANDO)
@@ -60,7 +52,9 @@ class JarvisActions:
             self._start_emotion_worker()
         else:
             self.workers.cancel_group(self, _EMOTION_WORKER_GROUP)
+            self._camera.close()
             self.query_one(StatusBar).set_emotion(None, None)
+            self.query_one(CameraPreview).show_disabled()
 
     def on_input_submitted(self, message: Input.Submitted) -> None:
         """Send typed text through the same path as a transcribed utterance."""
@@ -127,15 +121,16 @@ class JarvisActions:
             group=_EMOTION_WORKER_GROUP,
         )
 
-    def _on_emotion(self, reading: tuple[Emotion, float] | None) -> None:
+    def _on_emotion(self, sample: EmotionSample | None) -> None:
         """Forward one webcam sample from the worker loop to the UI thread."""
-        self.post_message(EmotionUpdated(reading))
+        self.post_message(EmotionUpdated(sample))
 
     def on_emotion_updated(self, message: EmotionUpdated) -> None:
-        """Update the status badge and, above the confidence cutoff, the avatar."""
-        if message.reading is None:
+        """Refresh the preview and, above the confidence cutoff, the avatar."""
+        self.query_one(CameraPreview).update_sample(message.sample)
+        if message.sample is None or message.sample.reading is None:
             return
-        emotion, confidence = message.reading
+        emotion, confidence = message.sample.reading
         self.query_one(StatusBar).set_emotion(emotion.value, confidence)
         if confidence >= EMOTION_LOW_CONFIDENCE_THRESHOLD:
             self._conversation.set_last_emotion(emotion)

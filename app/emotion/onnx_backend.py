@@ -9,7 +9,7 @@ import onnxruntime as ort
 
 from app.constants import EMOTION_INPUT_SIZE_PX
 from app.emotion.face_locator import BoundingBox, FaceLocator
-from app.emotion.protocol import Emotion
+from app.emotion.protocol import Detection, Emotion
 from app.errors import EmotionDetectionError
 
 _PIXEL_FULL_SCALE = 255.0
@@ -29,8 +29,8 @@ class OnnxEmotionDetector:
 
         self._input_name = self._session.get_inputs()[0].name
 
-    def detect(self, frame: npt.NDArray[np.uint8]) -> tuple[Emotion, float] | None:
-        """Return the dominant emotion in `frame` with its confidence, or `None`."""
+    def detect(self, frame: npt.NDArray[np.uint8]) -> Detection | None:
+        """Return the dominant emotion in `frame` with its location, or `None`."""
         box = self._face_locator.locate(frame)
         if box is None:
             return None
@@ -43,7 +43,8 @@ class OnnxEmotionDetector:
 
         probabilities = _softmax(scores)
         index = int(np.argmax(probabilities))
-        return list(Emotion)[index], float(probabilities[index])
+        emotion = list(Emotion)[index]
+        return Detection(box=box, emotion=emotion, confidence=float(probabilities[index]))
 
     def _preprocess(
         self, frame: npt.NDArray[np.uint8], box: BoundingBox

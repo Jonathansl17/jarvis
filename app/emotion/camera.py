@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import numpy.typing as npt
 
+from app.constants import CAMERA_WARMUP_FRAMES
 from app.errors import EmotionDetectionError
 
 
@@ -38,4 +39,11 @@ class Camera:
             raise EmotionDetectionError(f"Failed to open webcam at index {self._device_index}")
 
         self._capture = capture
+        self._warm_up(capture)
         return capture
+
+    @staticmethod
+    def _warm_up(capture: cv2.VideoCapture) -> None:
+        """Discard the first frames so auto exposure settles before use."""
+        for _ in range(CAMERA_WARMUP_FRAMES):
+            capture.read()

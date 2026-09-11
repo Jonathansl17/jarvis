@@ -9,7 +9,8 @@ FIELD_SEPARATOR = "  │  "
 _KEY_HINT_TEMPLATE = "{key}:{description}"
 _KEY_HINT_SEPARATOR = "  "
 KEY_HINTS_TEXT = _KEY_HINT_SEPARATOR.join(
-    _KEY_HINT_TEMPLATE.format(key=spec.key, description=spec.description) for spec in KEY_BINDINGS
+    _KEY_HINT_TEMPLATE.format(key=spec.key_display or spec.key, description=spec.description)
+    for spec in KEY_BINDINGS
 )
 
 MIC_LISTO = "LISTO"

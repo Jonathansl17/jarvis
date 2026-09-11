@@ -45,9 +45,11 @@ names:
 
 ## Interaction
 
-- Type a message and press `Enter`, or, with the input line empty, press
-  `Space` to start recording and `Space` again to stop and transcribe. Both
-  paths end up in the same `DialogueOrchestrator.handle_user_text()` call.
+- Type a message and press `Enter`, or press `Ctrl+Espacio` to start
+  recording and again to stop and transcribe (`Ctrl+T` is a second binding
+  for the same action, for terminals that swallow Ctrl+Space). Both paths
+  end up in the same `DialogueOrchestrator.handle_user_text()` call. Space
+  is always a normal character in the input line.
 - `Ctrl+Q` quits. `Ctrl+E` toggles the webcam emotion sampler. `Tab` switches
   focus between the input line and the conversation log for scrollback.
 - The avatar, status bar, colors, and timings follow the visual spec

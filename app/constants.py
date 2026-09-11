@@ -43,7 +43,11 @@ EMOTION_INPUT_SIZE_PX = 48
 FACE_CASCADE_SCALE_FACTOR = 1.32
 FACE_CASCADE_MIN_NEIGHBORS = 5
 CAMERA_INDEX = 0
-EMOTION_SAMPLE_INTERVAL_SECONDS = 4.0
+# A freshly opened USB webcam's first frames are near-black while its auto
+# exposure settles; discarding a few on open avoids reporting "no face"
+# during that warm-up window.
+CAMERA_WARMUP_FRAMES = 10
+EMOTION_SAMPLE_INTERVAL_SECONDS = 2.0
 # Below this softmax confidence, an emotion reading is reported as uncertain
 # rather than shown as a specific label, both in the status bar and the
 # avatar overlay.

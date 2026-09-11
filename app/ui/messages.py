@@ -3,7 +3,7 @@
 from textual.message import Message
 
 from app.dialogue.reply import AssistantReply
-from app.workers.emotion_sampling import EmotionReading
+from app.workers.emotion_sampling import EmotionSample
 
 
 class TranscriptReady(Message):
@@ -31,11 +31,11 @@ class AssistantSpeakingEnded(Message):
 
 
 class EmotionUpdated(Message):
-    """A new webcam emotion reading is available, or the face was lost."""
+    """A new webcam sample is available, or the camera yielded nothing."""
 
-    def __init__(self, reading: EmotionReading) -> None:
+    def __init__(self, sample: EmotionSample | None) -> None:
         super().__init__()
-        self.reading = reading
+        self.sample = sample
 
 
 class ErrorOccurred(Message):

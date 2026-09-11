@@ -2,7 +2,7 @@
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
 from textual.widgets import Input
 
 from app.dialogue.strings import GREETING_TEXT
@@ -16,20 +16,27 @@ from app.ui.collaborators import (
 )
 from app.ui.key_bindings import KEY_BINDINGS
 from app.ui.widgets.avatar_pane import AvatarPane
+from app.ui.widgets.camera_preview import CameraPreview
 from app.ui.widgets.conversation_log import ConversationLog
 from app.ui.widgets.status_bar import StatusBar
 
-_INPUT_PLACEHOLDER = "Escribe y presiona Enter, o con la caja vacía presiona espacio para hablar…"
+_INPUT_PLACEHOLDER = "Escribe y presiona Enter, o Ctrl+Espacio (o Ctrl+T) para hablar…"
 
 
 class JarvisApp(JarvisActions, App):
     """The TUI: avatar pane, conversation log, input line, and status bar."""
 
     CSS_PATH = "styles.tcss"
-    # priority=True so the keys work while the input line has focus. Space
-    # only records when the input is empty, otherwise it types a space.
+    # priority=True so the keys work while the input line has focus.
     BINDINGS = [
-        Binding(spec.key, spec.action, spec.description, priority=True) for spec in KEY_BINDINGS
+        Binding(
+            spec.key,
+            spec.action,
+            spec.description,
+            priority=True,
+            key_display=spec.key_display,
+        )
+        for spec in KEY_BINDINGS
     ]
 
     def __init__(
@@ -59,7 +66,9 @@ class JarvisApp(JarvisActions, App):
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="top-region"):
-            yield AvatarPane(id="avatar")
+            with Vertical(id="left-pane"):
+                yield AvatarPane(id="avatar")
+                yield CameraPreview(id="camera-preview")
             yield ConversationLog(id="log")
         yield Input(placeholder=_INPUT_PLACEHOLDER, id="input-line")
         yield StatusBar(self._stt_engine_name, id="status-bar")
