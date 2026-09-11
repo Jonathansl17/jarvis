@@ -1,8 +1,11 @@
 # Jarvis
 
-Group project for the Artificial Intelligence course. Ten machine learning models built with CRISP-DM, a REST API that serves
-them, and JarvisTEC, a desktop voice assistant that runs them from spoken
-Spanish while reading the user's emotion from the webcam.
+Jarvis is a Spanish-speaking desktop voice assistant that answers questions
+with machine learning models: ten models built end to end with CRISP-DM
+(regression, classification and time series), a REST API that serves them,
+and a desktop app that listens, reads the user's emotion from the webcam,
+picks the right model, asks for what is missing and answers in text and
+voice, with an animated penguin that reacts to how you look.
 
 ## Repository layout
 
