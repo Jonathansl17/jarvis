@@ -1,43 +1,27 @@
-"""Composes the JarvisTEC screen; behavior lives in `ui/actions.py`."""
+"""Composes the JarvisTEC desktop window; behavior lives in `ui/actions.py`
+and `ui/dispatch_handlers.py`, layout in `ui/layout.py`."""
 
-from textual.app import App, ComposeResult
-from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
-from textual.widgets import Input
+import customtkinter as ctk
 
 from app.dialogue.strings import GREETING_TEXT
 from app.intents.models import Speaker
+from app.ui import layout, theme
 from app.ui.actions import JarvisActions
 from app.ui.collaborators import (
     DialogueCollaborators,
     EmotionCollaborators,
-    RuntimeOptions,
+    RuntimeCollaborators,
     SpeechCollaborators,
 )
+from app.ui.dispatch_handlers import JarvisDispatchHandlers
 from app.ui.key_bindings import KEY_BINDINGS
-from app.ui.widgets.avatar_pane import AvatarPane
-from app.ui.widgets.camera_preview import CameraPreview
-from app.ui.widgets.conversation_log import ConversationLog
-from app.ui.widgets.status_bar import StatusBar
+from app.ui.layout_types import StatusBarInfo, WindowCallbacks
 
-_INPUT_PLACEHOLDER = "Escribe y presiona Enter, o Ctrl+Espacio (o Ctrl+T) para hablar…"
+_DISPATCH_POLL_MS = 50
 
 
-class JarvisApp(JarvisActions, App):
-    """The TUI: avatar pane, conversation log, input line, and status bar."""
-
-    CSS_PATH = "styles.tcss"
-    # priority=True so the keys work while the input line has focus.
-    BINDINGS = [
-        Binding(
-            spec.key,
-            spec.action,
-            spec.description,
-            priority=True,
-            key_display=spec.key_display,
-        )
-        for spec in KEY_BINDINGS
-    ]
+class JarvisApp(JarvisActions, JarvisDispatchHandlers):
+    """The desktop GUI: avatar/camera cards, conversation, input, status strip."""
 
     def __init__(
         self,
@@ -45,45 +29,63 @@ class JarvisApp(JarvisActions, App):
         dialogue: DialogueCollaborators,
         speech: SpeechCollaborators,
         emotion: EmotionCollaborators,
-        options: RuntimeOptions,
+        runtime: RuntimeCollaborators,
     ) -> None:
-        super().__init__()
         self._orchestrator = dialogue.orchestrator
-        self._prediction_client = dialogue.prediction_client
         self._conversation = dialogue.conversation
-        self._recorder = speech.recorder
-        self._stt = speech.stt
-        self._tts = speech.tts
-        self._player = speech.player
-        self._camera = emotion.camera
-        self._emotion_detector = emotion.detector
-        self._stt_engine_name = options.stt_engine_name
-        self._camera_enabled = options.camera_enabled
+        self._recorder, self._stt = speech.recorder, speech.stt
+        self._tts, self._player = speech.tts, speech.player
+        self._camera, self._emotion_detector = emotion.camera, emotion.detector
+        self._bridge, self._dispatch = runtime.bridge, runtime.dispatch
+        options = runtime.options
         self._tts_enabled = options.tts_enabled
-        self._preview_interval_seconds = options.preview_interval_seconds
+        self._camera_enabled = options.camera_enabled
+        self._camera_frame_interval_seconds = options.camera_frame_interval_seconds
         self._emotion_interval_seconds = options.emotion_interval_seconds
-        self._startup_notices = options.startup_notices
         self._recording = False
+        self._camera_worker = None
+        self.root = ctk.CTk()
+        self._build_window(options.stt_engine_name, options.initial_ia_state)
 
-    def compose(self) -> ComposeResult:
-        with Horizontal(id="top-region"):
-            with Vertical(id="left-pane"):
-                yield AvatarPane(id="avatar")
-                yield CameraPreview(id="camera-preview")
-            yield ConversationLog(id="log")
-        yield Input(placeholder=_INPUT_PLACEHOLDER, id="input-line")
-        yield StatusBar(self._stt_engine_name, id="status-bar")
-
-    def on_mount(self) -> None:
-        """Greet the user, surface any startup notices, and start the camera."""
-        log = self.query_one(ConversationLog)
-        log.append_turn(Speaker.ASSISTANT, GREETING_TEXT)
-        for notice in self._startup_notices:
-            log.append_turn(Speaker.SYSTEM, notice)
-        self.query_one("#input-line").focus()
+    def run(self) -> None:
+        """Show the greeting, start the camera if enabled, and block on Tk."""
+        self.conversation_view.append_turn(Speaker.ASSISTANT, GREETING_TEXT)
         if self._camera_enabled:
-            self._start_emotion_worker()
+            self._start_camera_worker()
+        else:
+            self.camera_preview.show_disabled()
+        self.root.after(_DISPATCH_POLL_MS, self._poll_dispatch)
+        self.root.mainloop()
 
-    def on_unmount(self) -> None:
-        """Release the webcam device on shutdown."""
-        self._camera.close()
+    def destroy_app(self) -> None:
+        """Release the webcam and audio client, then close the window."""
+        if self._camera_worker is not None:
+            self._camera_worker.stop()
+        else:
+            self._camera.close()
+        self._bridge.stop()
+        self.root.destroy()
+
+    def _build_window(self, stt_engine_name: str, initial_ia_state: str) -> None:
+        """Lay out the window's widgets, bind global keys, and wire the close handler."""
+        fonts = theme.apply_theme()
+        callbacks = WindowCallbacks(
+            on_send=self.on_send, on_mic_toggle=self.on_mic_toggle, on_camera_toggle=self.on_camera_toggle
+        )
+        widgets = layout.build_window(self.root, fonts, StatusBarInfo(stt_engine_name, initial_ia_state), callbacks)
+        self.avatar_pane = widgets.avatar_pane
+        self.camera_preview = widgets.camera_preview
+        self.camera_toggle_button = widgets.camera_toggle_button
+        self.conversation_view = widgets.conversation_view
+        self.input_row = widgets.input_row
+        self.status_bar = widgets.status_bar
+
+        for spec in KEY_BINDINGS:
+            self.root.bind(spec.sequence, lambda _event, action=spec.action: getattr(self, action)())
+        self.root.protocol("WM_DELETE_WINDOW", self.on_quit)
+
+    def _poll_dispatch(self) -> None:
+        """Drain the bridge queue and dispatch each message, then reschedule."""
+        for message in self._dispatch.poll():
+            self.dispatch(message)
+        self.root.after(_DISPATCH_POLL_MS, self._poll_dispatch)

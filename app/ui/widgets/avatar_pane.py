@@ -1,89 +1,55 @@
-"""Renders the current avatar frame and its emotion overlay (§7)."""
+"""Hosts the animated procedural penguin avatar (§7 of the design spec)."""
 
-import random
-
-from textual.widgets import Static
+import customtkinter as ctk
+from PIL import Image
 
 from app.emotion.protocol import Emotion
-from app.ui.emotion_overlay import apply_emotion_overlay
-from app.ui.frames import AVATAR_FRAMES, AvatarState
+from app.ui.avatar.animator import AvatarAnimator
+from app.ui.avatar.expressions import Expression, resolve_expression
+from app.ui.avatar.renderer import render_pose
+from app.ui.avatar.spec import POSES, AvatarState
 
-_IDLE_BLINK_HOLD_SECONDS = 0.150
-_IDLE_BLINK_INTERVAL_RANGE_SECONDS = (6.0, 9.0)
-_THINKING_FRAME_INTERVAL_SECONDS = 0.3
-_SPEAKING_FRAME_INTERVAL_SECONDS = 0.12
-_LISTENING_EAR_PULSE_SECONDS = 0.4
+_AVATAR_SIZE_PX = (200, 200)
+
+_FrameKey = tuple[AvatarState, int, Emotion | None]
 
 
-class AvatarPane(Static):
-    """Owns the avatar's animation timers and its last known emotion overlay."""
+class AvatarPane(ctk.CTkLabel):
+    """A `CTkLabel` that shows the avatar's current animated frame."""
 
-    def __init__(self, **kwargs: object) -> None:
-        super().__init__(**kwargs)
-        self._state = AvatarState.IDLE
-        self._emotion: Emotion | None = None
-        self._frame_index = 0
-        self._timer = None
-
-    def on_mount(self) -> None:
-        self.set_state(AvatarState.IDLE)
+    def __init__(self, master: ctk.CTkBaseClass, **kwargs: object) -> None:
+        super().__init__(master, text="", **kwargs)
+        self._image_cache: dict[_FrameKey, Image.Image] = {}
+        self._animator = AvatarAnimator(
+            schedule=self.after, render=self._render_frame, on_frame=self._show_frame
+        )
+        self._animator.set_state(AvatarState.IDLE)
 
     def set_state(self, state: AvatarState) -> None:
-        """Switch behavioral state, restarting that state's animation timer."""
-        self._state = state
-        self._frame_index = 0
-        self._restart_timer()
-        self._render_current_frame()
+        """Switch the avatar's behavioral state (idle/listening/thinking/speaking)."""
+        self._animator.set_state(state)
 
     def set_emotion(self, emotion: Emotion | None) -> None:
-        """Update the emotion overlaid on whatever state is currently active."""
-        self._emotion = emotion
-        self._render_current_frame()
+        """Update the emotion overlaid on the avatar's current state."""
+        self._animator.set_emotion(emotion)
 
-    def _restart_timer(self) -> None:
-        """Replace the running animation timer with the one `self._state` needs."""
-        if self._timer is not None:
-            self._timer.stop()
-        schedulers = {
-            AvatarState.IDLE: self._schedule_idle_tick,
-            AvatarState.THINKING: lambda: self.set_interval(
-                _THINKING_FRAME_INTERVAL_SECONDS, self._advance_frame
-            ),
-            AvatarState.SPEAKING: lambda: self.set_interval(
-                _SPEAKING_FRAME_INTERVAL_SECONDS, self._advance_frame
-            ),
-            AvatarState.LISTENING: lambda: self.set_interval(
-                _LISTENING_EAR_PULSE_SECONDS, self._advance_frame
-            ),
-        }
-        self._timer = schedulers[self._state]()
+    def destroy(self) -> None:
+        """Stop the animation timer before the widget is torn down."""
+        self._animator.stop()
+        super().destroy()
 
-    def _schedule_idle_tick(self):
-        """Hold the open-eyes frame, then blink once after a randomized wait."""
-        interval = random.uniform(*_IDLE_BLINK_INTERVAL_RANGE_SECONDS)
-        return self.set_timer(interval, self._blink_then_reschedule)
+    def _render_frame(self, state: AvatarState, frame_index: int, emotion: Emotion | None) -> Image.Image:
+        """Render (or reuse a cached render of) one `(state, frame, emotion)` combo."""
+        key = (state, frame_index, emotion)
+        cached = self._image_cache.get(key)
+        if cached is not None:
+            return cached
+        pose = POSES[state][frame_index]
+        expression: Expression | None = resolve_expression(emotion) if emotion is not None else None
+        image = render_pose(pose, expression, _AVATAR_SIZE_PX)
+        self._image_cache[key] = image
+        return image
 
-    def _blink_then_reschedule(self) -> None:
-        """Show the blink frame briefly, then resume the idle schedule."""
-        self._frame_index = 1
-        self._render_current_frame()
-        self.set_timer(_IDLE_BLINK_HOLD_SECONDS, self._end_blink)
-
-    def _end_blink(self) -> None:
-        """Return to the open-eyes frame and arm the next blink."""
-        self._frame_index = 0
-        self._render_current_frame()
-        self._timer = self._schedule_idle_tick()
-
-    def _advance_frame(self) -> None:
-        """Move to the next frame in the current state's loop and render it."""
-        frames = AVATAR_FRAMES[self._state]
-        self._frame_index = (self._frame_index + 1) % len(frames)
-        self._render_current_frame()
-
-    def _render_current_frame(self) -> None:
-        """Draw the active frame, with the emotion overlay applied if any."""
-        frame = AVATAR_FRAMES[self._state][self._frame_index]
-        if self._emotion is not None:
-            frame = apply_emotion_overlay(frame, self._emotion)
-        self.update(frame)
+    def _show_frame(self, image: Image.Image) -> None:
+        """Wrap a rendered frame as a `CTkImage` and display it."""
+        self.configure(image=ctk.CTkImage(light_image=image, dark_image=image, size=_AVATAR_SIZE_PX))

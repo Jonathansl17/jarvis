@@ -10,11 +10,11 @@ from app.api_client.http_client import HttpPredictionClient
 from app.api_client.protocol import PredictionClient
 from app.config import Settings, get_settings
 from app.constants import (
+    CAMERA_FRAME_INTERVAL_SECONDS,
     CAMERA_INDEX,
     EMOTION_SAMPLE_INTERVAL_SECONDS,
     FACE_CASCADE_FILENAME,
     FACIAL_EMOTION_MODEL_FILENAME,
-    PREVIEW_INTERVAL_SECONDS,
     WHISPER_DEVICE,
     WHISPER_LANGUAGE,
     WHISPER_MODEL_SIZE,
@@ -35,37 +35,39 @@ from app.speech.stt.whisper_backend import WhisperSpeechToText
 from app.speech.tts.piper_backend import PiperTextToSpeech
 from app.speech.tts.player import AudioPlayer
 from app.speech.tts.voice_cache import ensure_voice_downloaded
-from app.ui.app import JarvisApp
 from app.ui.collaborators import (
+    AppCollaborators,
     DialogueCollaborators,
     EmotionCollaborators,
     RuntimeOptions,
     SpeechCollaborators,
 )
+from app.ui.strings import STATUS_IA_RULES
 
 _STT_ENGINE_NAME_TEMPLATE = "whisper-{model_size}"
-_NOTICE_GEMINI_DISABLED = "Gemini no está configurado; usando reglas por palabra clave."
-_NOTICE_API_UNREACHABLE = "No se pudo contactar la API para obtener esquemas; usando reglas."
 
 
-async def create_app() -> JarvisApp:
-    """Wire every concrete adapter together and return the ready `JarvisApp`.
+async def create_app() -> AppCollaborators:
+    """Wire every non-UI adapter together, ready for `JarvisApp`'s constructor.
 
     Async because building the intent parser fetches model schemas over
     HTTP; the `httpx.AsyncClient` it shares with the rest of the app's
     lifetime must be used from a single event loop throughout, so this
-    coroutine has to run on the same loop the caller later runs the `App`
-    on (see `__main__.py`), never behind its own throwaway `asyncio.run()`.
+    coroutine must be submitted onto the bridge's background loop (see
+    `__main__.py`), never run behind its own throwaway `asyncio.run()`.
+
+    Returns collaborators rather than a constructed `JarvisApp`: building
+    the Tk root must happen on the main thread, not this background loop's
+    thread, which is why `__main__.py` constructs `JarvisApp` itself.
     """
     settings = get_settings()
     prediction_client = HttpPredictionClient(settings.api_base_url)
-    startup_notices: list[str] = []
-    intent_parser = await _build_intent_parser(settings, prediction_client, startup_notices)
+    intent_parser = await _build_intent_parser(settings, prediction_client)
     conversation = Conversation()
     orchestrator = DialogueOrchestrator(
         intent_parser, prediction_client, ToneAdapter(), conversation
     )
-    return JarvisApp(
+    return AppCollaborators(
         dialogue=DialogueCollaborators(orchestrator, prediction_client, conversation),
         speech=_build_speech(settings),
         emotion=_build_emotion(settings),
@@ -73,28 +75,31 @@ async def create_app() -> JarvisApp:
             stt_engine_name=_STT_ENGINE_NAME_TEMPLATE.format(model_size=WHISPER_MODEL_SIZE),
             camera_enabled=settings.camera_enabled,
             tts_enabled=settings.tts_enabled,
-            preview_interval_seconds=PREVIEW_INTERVAL_SECONDS,
+            camera_frame_interval_seconds=CAMERA_FRAME_INTERVAL_SECONDS,
             emotion_interval_seconds=EMOTION_SAMPLE_INTERVAL_SECONDS,
-            startup_notices=startup_notices,
+            initial_ia_state=_initial_ia_state(intent_parser, settings),
         ),
     )
 
 
-async def _build_intent_parser(
-    settings: Settings, prediction_client: PredictionClient, startup_notices: list[str]
-) -> IntentParser:
-    """Build the Gemini+rules composite, or rules alone, logging why if so."""
+async def _build_intent_parser(settings: Settings, prediction_client: PredictionClient) -> IntentParser:
+    """Build the Gemini+rules composite, or rules alone if either is unavailable."""
     rules_parser = RulesParser()
     if not settings.gemini_api_key:
-        startup_notices.append(_NOTICE_GEMINI_DISABLED)
         return rules_parser
     try:
         schemas = await _fetch_model_schemas(prediction_client)
     except PredictionRequestError:
-        startup_notices.append(_NOTICE_API_UNREACHABLE)
         return rules_parser
     gemini_parser = GeminiParser(settings.gemini_api_key, settings.gemini_models, schemas)
     return CompositeIntentParser(gemini_parser, rules_parser)
+
+
+def _initial_ia_state(intent_parser: IntentParser, settings: Settings) -> str:
+    """Return the status strip's starting IA label: the first Gemini model, or "reglas"."""
+    if isinstance(intent_parser, CompositeIntentParser):
+        return settings.gemini_models[0]
+    return STATUS_IA_RULES
 
 
 async def _fetch_model_schemas(prediction_client: PredictionClient) -> dict[str, Any]:

@@ -50,10 +50,11 @@ CAMERA_INDEX = 0
 # exposure settles; discarding a few on open avoids reporting "no face"
 # during that warm-up window.
 CAMERA_WARMUP_FRAMES = 10
-# How often the camera preview grabs a new frame; the emotion detector runs
-# far less often (`EMOTION_SAMPLE_INTERVAL_SECONDS`), reusing its last
-# result on the frames in between so the face box stays drawn live.
-PREVIEW_INTERVAL_SECONDS = 0.25
+# How often the camera worker thread grabs a new frame (~15 fps); the
+# emotion detector runs far less often (`EMOTION_SAMPLE_INTERVAL_SECONDS`),
+# reusing its last result on the frames in between so the face box stays
+# drawn live.
+CAMERA_FRAME_INTERVAL_SECONDS = 1 / 15
 EMOTION_SAMPLE_INTERVAL_SECONDS = 2.0
 # Below this softmax confidence, an emotion reading is reported as uncertain
 # rather than shown as a specific label, both in the status bar and the

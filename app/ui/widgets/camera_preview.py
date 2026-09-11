@@ -1,120 +1,65 @@
-"""Renders the latest webcam frame as a full-frame half-block mirror image,
-plus a status row naming the detected emotion in Spanish."""
+"""Hosts the camera card's video feed and emotion-word label (§8).
 
-import cv2
-import numpy as np
-import numpy.typing as npt
-from rich.style import Style
-from rich.text import Text
-from textual.widgets import Static
+Implemented as a `CTkFrame` rather than a bare `CTkLabel` (a deviation from
+the architecture plan's sketch) because §8 requires two stacked elements —
+the video image and, 8px below it, the emotion-word label — which a single
+label cannot host; `update_sample`/`show_disabled` keep the plan's method
+contract.
+"""
 
-from app.emotion.face_locator import BoundingBox
+import customtkinter as ctk
+from PIL import Image
+
+from app.emotion.protocol import Emotion
 from app.emotion.spanish_labels import EMOTION_LABELS_ES, NO_FACE_TEXT
-from app.workers.emotion_sampling import EmotionReading, EmotionSample
+from app.ui import strings, theme
+from app.ui.camera_render import VIDEO_HEIGHT_PX, VIDEO_WIDTH_PX, render_camera_frame
+from app.ui.theme import Fonts
+from app.workers.camera_worker import CameraSample
 
-_GRID_COLUMNS = 38
-_GRID_ROWS = 16
-# Each character cell shows two vertically stacked pixels via a half-block
-# glyph: its foreground colors the top pixel, its background the bottom one.
-_PIXEL_ROWS = _GRID_ROWS * 2
-_HALF_BLOCK = "▀"
-_DISABLED_LABEL = "cámara apagada"
-_FACE_BOX_COLOR = "#59F2C4"
-_STATUS_LINE_TEMPLATE = "{label} {confidence:.0f} %"
-_CONFIDENCE_PERCENT_SCALE = 100
+_VIDEO_EMOTION_GAP_PX = 8
 
 
-class CameraPreview(Static):
-    """Shows a downscaled, mirrored webcam preview, or a disabled label."""
+class CameraPreview(ctk.CTkFrame):
+    """Shows a mirrored, cropped webcam feed plus the detected emotion word."""
 
-    def on_mount(self) -> None:
-        self.show_disabled()
+    def __init__(self, master: ctk.CTkBaseClass, fonts: Fonts, **kwargs: object) -> None:
+        super().__init__(master, fg_color="transparent", **kwargs)
+        self._video_label = ctk.CTkLabel(
+            self,
+            text="",
+            fg_color=theme.COLOR_BG_CARD_ELEVATED,
+            width=VIDEO_WIDTH_PX,
+            height=VIDEO_HEIGHT_PX,
+        )
+        self._video_label.pack()
+        self._emotion_label = ctk.CTkLabel(
+            self, text=strings.CAMERA_DISABLED_LABEL, font=fonts.emotion_word, text_color=theme.COLOR_TEXT_SECONDARY
+        )
+        self._emotion_label.pack(pady=(_VIDEO_EMOTION_GAP_PX, 0))
 
     def show_disabled(self) -> None:
-        """Show the centered placeholder for when the camera is off."""
-        self.update(_DISABLED_LABEL)
+        """Clear the video image and show the disabled placeholder text."""
+        self._video_label.configure(image=None)
+        self._emotion_label.configure(text=strings.CAMERA_DISABLED_LABEL, text_color=theme.COLOR_TEXT_SECONDARY)
 
-    def update_sample(self, sample: EmotionSample | None) -> None:
-        """Render the sampled frame, its detected face box, and its reading."""
+    def update_sample(self, sample: CameraSample | None) -> None:
+        """Render the sampled frame and update the emotion-word label."""
         if sample is None:
             return
-        self.update(_render_frame(sample.frame, sample.box, sample.reading))
+        self._show_video(render_camera_frame(sample.frame, sample.box, sample.reading))
+        self._emotion_label.configure(**_emotion_label_kwargs(sample.reading))
+
+    def _show_video(self, image: Image.Image) -> None:
+        """Wrap a rendered video frame as a `CTkImage` and display it."""
+        ctk_image = ctk.CTkImage(light_image=image, dark_image=image, size=(VIDEO_WIDTH_PX, VIDEO_HEIGHT_PX))
+        self._video_label.configure(image=ctk_image)
 
 
-def _render_frame(
-    frame: npt.NDArray[np.uint8], box: BoundingBox | None, reading: EmotionReading
-) -> Text:
-    """Build the mirrored half-block preview, its face box, and status line."""
-    pixels = _downscale_and_mirror(frame)
-    grid_box = _scale_box(box, frame.shape[1], frame.shape[0]) if box is not None else None
-    text = _build_half_block_text(pixels, grid_box)
-    text.append(_status_line(reading).center(_GRID_COLUMNS))
-    return text
-
-
-def _status_line(reading: EmotionReading) -> str:
-    """Build the emotion status text shown under the preview grid."""
+def _emotion_label_kwargs(reading: tuple[Emotion, float] | None) -> dict[str, str]:
+    """Build the emotion-word label's text and color for one reading."""
     if reading is None:
-        return NO_FACE_TEXT
-    emotion, confidence = reading
-    percent = confidence * _CONFIDENCE_PERCENT_SCALE
-    return _STATUS_LINE_TEMPLATE.format(label=EMOTION_LABELS_ES[emotion], confidence=percent)
-
-
-def _downscale_and_mirror(frame: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
-    """Resize to the preview's pixel grid and mirror it like a mirror."""
-    resized = cv2.resize(
-        frame, (_GRID_COLUMNS, _PIXEL_ROWS), interpolation=cv2.INTER_AREA
-    )
-    mirrored = cv2.flip(resized, 1)
-    return cv2.cvtColor(mirrored, cv2.COLOR_BGR2RGB)
-
-
-def _scale_box(box: BoundingBox, frame_width: int, frame_height: int) -> BoundingBox:
-    """Scale a face box from frame pixels to the preview's character grid."""
-    scale_x = _GRID_COLUMNS / frame_width
-    scale_y = _GRID_ROWS / frame_height
-    width = max(1, round(box.width * scale_x))
-    height = max(1, round(box.height * scale_y))
-    x = round(box.x * scale_x)
-    mirrored_x = max(0, min(_GRID_COLUMNS - width, _GRID_COLUMNS - x - width))
-    y = max(0, min(_GRID_ROWS - height, round(box.y * scale_y)))
-    return BoundingBox(x=mirrored_x, y=y, width=width, height=height)
-
-
-def _build_half_block_text(pixels: npt.NDArray[np.uint8], box: BoundingBox | None) -> Text:
-    """Pair each two pixel rows into one styled half-block character row."""
-    text = Text()
-    for row in range(_GRID_ROWS):
-        top, bottom = pixels[row * 2], pixels[row * 2 + 1]
-        for col in range(_GRID_COLUMNS):
-            style = _cell_style((top[col], bottom[col]), (row, col), box)
-            text.append(_HALF_BLOCK, style=style)
-        text.append("\n")
-    return text
-
-
-def _cell_style(
-    pixel_pair: tuple[npt.NDArray[np.uint8], npt.NDArray[np.uint8]],
-    position: tuple[int, int],
-    box: BoundingBox | None,
-) -> Style:
-    """Tint a cell in the face-box accent color if it sits on its border."""
-    if box is not None and _on_box_border(position, box):
-        return Style(color=_FACE_BOX_COLOR, bgcolor=_FACE_BOX_COLOR)
-    top_pixel, bottom_pixel = pixel_pair
-    return Style(color=_rgb(top_pixel), bgcolor=_rgb(bottom_pixel))
-
-
-def _on_box_border(position: tuple[int, int], box: BoundingBox) -> bool:
-    """Return whether grid cell `position` (row, col) sits on `box`'s perimeter."""
-    row, col = position
-    left, top = box.x, box.y
-    right, bottom = box.x + box.width - 1, box.y + box.height - 1
-    within_rows, within_cols = top <= row <= bottom, left <= col <= right
-    return (within_rows and col in (left, right)) or (within_cols and row in (top, bottom))
-
-
-def _rgb(pixel: npt.NDArray[np.uint8]) -> str:
-    """Format an RGB pixel as a Rich `rgb(r,g,b)` color string."""
-    return f"rgb({pixel[0]},{pixel[1]},{pixel[2]})"
+        return {"text": NO_FACE_TEXT.upper(), "text_color": theme.COLOR_TEXT_SECONDARY}
+    emotion, _confidence = reading
+    color = theme.EMOTION_LABEL_COLORS[emotion.value]
+    return {"text": EMOTION_LABELS_ES[emotion].upper(), "text_color": color}

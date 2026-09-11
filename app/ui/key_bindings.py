@@ -1,37 +1,49 @@
-"""Single source of truth for `JarvisApp`'s key bindings.
+"""Single source of truth for `JarvisApp`'s global key bindings, per §15.
 
-`ui/app.py` turns each entry into a Textual `Binding`, and
-`ui/widgets/status_bar.py` turns the same entries into the status line's key
-hints, so the bindings and their on-screen description never drift apart.
+`Enter` is bound directly on the entry widget (`widgets/input_row.py`)
+since it only fires while that widget has focus; every binding here is
+global (bound on the root window) and works regardless of focus.
+`KEY_HINTS_TEXT` is derived from this same table (plus the documented
+Enter exception) so the on-screen hints can never drift from what is
+actually bound.
 """
 
 from dataclasses import dataclass
 
+_ENTER_HINT = "Enter: enviar"
+_HINT_SEPARATOR = " · "
+
 
 @dataclass(frozen=True)
 class KeyBindingSpec:
-    """One key binding: the key, the action it triggers, and its Spanish hint.
+    """One global key binding: its Tk sequence, the action it triggers, and
+    the human-readable key combo shown in the on-screen hints."""
 
-    `key` is Textual's internal key name (see `textual.keys`), which is not
-    always what a user would type to reach it — `key_display`, when set,
-    overrides it for the status bar hint and Textual's own UI.
-    """
-
-    key: str
+    sequence: str
     action: str
     description: str
-    key_display: str | None = None
+    key_display: str
 
 
 KEY_BINDINGS: tuple[KeyBindingSpec, ...] = (
-    # Textual's internal name for Ctrl+Space is "ctrl+at" (see
-    # `textual.keys.KEY_ALIASES`); `key_display` shows the key users actually
-    # press. `ctrl+t` is a second binding for the same action, as a fallback
-    # for terminals that swallow Ctrl+Space before it reaches the app.
-    KeyBindingSpec(
-        key="ctrl+at", action="toggle_recording", description="hablar", key_display="ctrl+espacio"
-    ),
-    KeyBindingSpec(key="ctrl+t", action="toggle_recording", description="hablar"),
-    KeyBindingSpec(key="ctrl+e", action="toggle_camera", description="cámara"),
-    KeyBindingSpec(key="ctrl+q", action="quit", description="salir"),
+    KeyBindingSpec("<Control-space>", "on_mic_toggle", "hablar", "Ctrl+Espacio"),
+    KeyBindingSpec("<Control-e>", "on_camera_toggle", "cámara", "Ctrl+E"),
+    KeyBindingSpec("<Escape>", "on_quit", "salir", "Esc"),
+    KeyBindingSpec("<Control-q>", "on_quit", "salir", "Ctrl+Q"),
 )
+
+
+def _build_hints_text() -> str:
+    """One hint per unique action, in binding order, plus the Enter exception."""
+    seen_actions: set[str] = set()
+    hints = []
+    for spec in KEY_BINDINGS:
+        if spec.action in seen_actions:
+            continue
+        seen_actions.add(spec.action)
+        hints.append(f"{spec.key_display}: {spec.description}")
+    hints.insert(len(hints) - 1, _ENTER_HINT)
+    return _HINT_SEPARATOR.join(hints)
+
+
+KEY_HINTS_TEXT = _build_hints_text()

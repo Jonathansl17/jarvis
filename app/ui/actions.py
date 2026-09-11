@@ -1,146 +1,108 @@
-"""Key bindings and message handlers for `JarvisApp`, kept out of app.py to
-stay under the file's size ceiling; behavior only, no widget composition.
+"""What happens when the user does something: send, toggle mic, toggle camera,
+or quit. Behavior only — `ui/app.py` owns widget composition and lifecycle.
 """
 
-from textual.widgets import Input
-
-from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
-from app.dialogue.strings import EMPTY_TRANSCRIPT_TEXT
 from app.errors import SpeechRecognitionError, SynthesisError
 from app.intents.models import Speaker
-from app.ui.frames import AvatarState
+from app.ui import strings
+from app.ui.avatar.spec import AvatarState
 from app.ui.messages import (
     AssistantReplied,
-    EmotionUpdated,
+    CameraFailed,
+    CameraSampleReady,
     ErrorOccurred,
+    SpeakingFinished,
     TranscriptReady,
 )
-from app.ui.widgets.avatar_pane import AvatarPane
-from app.ui.widgets.camera_preview import CameraPreview
-from app.ui.widgets.conversation_log import ConversationLog
-from app.ui.widgets.status_bar import MIC_GRABANDO, MIC_LISTO, MIC_PROCESANDO, StatusBar
-from app.workers.emotion_sampling import EmotionSample, sample_emotion_forever
+from app.ui.widgets.status_bar import MIC_RECORDING
+from app.workers.camera_worker import CameraCallbacks, CameraSample, CameraTiming, CameraWorker
 from app.workers.listening import listen
 from app.workers.speaking import speak
 
-_EMOTION_WORKER_GROUP = "emotion"
-_LISTENING_WORKER_GROUP = "listening"
-_TURN_WORKER_GROUP = "turn"
-_SPEAKING_WORKER_GROUP = "speaking"
-
 
 class JarvisActions:
-    """Mixin holding `JarvisApp`'s bindings, actions, and message handlers."""
+    """Mixin holding `JarvisApp`'s user-triggered command handlers."""
 
-    def action_toggle_recording(self) -> None:
+    def on_send(self) -> None:
+        """Send the entry's current text through the same path as speech."""
+        text = self.input_row.get_text().strip()
+        self.input_row.clear()
+        if text:
+            self._submit_text(text)
+
+    def on_mic_toggle(self) -> None:
         """Start recording on the first press, stop and transcribe on the second."""
         if self._recording:
             self._recording = False
-            self.query_one(StatusBar).set_mic_state(MIC_PROCESANDO)
-            self.query_one("#input-line").disabled = True
-            self.run_worker(self._finish_recording(), group=_LISTENING_WORKER_GROUP)
+            self.input_row.set_mic_processing()
+            self.input_row.set_input_enabled(False)
+            self._bridge.submit(self._finish_recording())
         else:
             self._recorder.start()
             self._recording = True
-            self.query_one(AvatarPane).set_state(AvatarState.LISTENING)
-            self.query_one(StatusBar).set_mic_state(MIC_GRABANDO)
+            self.avatar_pane.set_state(AvatarState.LISTENING)
+            self.input_row.set_mic_recording(True)
+            self.status_bar.set_mic_state(MIC_RECORDING)
 
-    def action_toggle_camera(self) -> None:
-        """Turn webcam emotion sampling on or off, per the `e` key (§9)."""
+    def on_camera_toggle(self) -> None:
+        """Turn webcam emotion sampling on or off (Ctrl+E or the card button, §15)."""
         self._camera_enabled = not self._camera_enabled
         if self._camera_enabled:
-            self._start_emotion_worker()
+            self._start_camera_worker()
+            self.camera_toggle_button.configure(text=strings.CAMERA_TOGGLE_ON)
         else:
-            self.workers.cancel_group(self, _EMOTION_WORKER_GROUP)
-            self._camera.close()
-            self.query_one(StatusBar).set_camera_disabled()
-            self.query_one(CameraPreview).show_disabled()
+            self._camera_worker.stop()
+            self.camera_preview.show_disabled()
+            self.camera_toggle_button.configure(text=strings.CAMERA_TOGGLE_OFF)
 
-    def on_input_submitted(self, message: Input.Submitted) -> None:
-        """Send typed text through the same path as a transcribed utterance."""
-        text = message.value.strip()
-        self.query_one("#input-line").value = ""
-        if text:
-            self._submit_text(text)
+    def on_quit(self) -> None:
+        """Release the camera and audio handles, then close the window."""
+        self.destroy_app()
 
     async def _finish_recording(self) -> None:
         """Transcribe the just-stopped recording and route it like typed text."""
         try:
             text = await listen(self._recorder, self._stt)
         except SpeechRecognitionError as exc:
-            self.post_message(ErrorOccurred(str(exc)))
+            self._dispatch.put(ErrorOccurred(str(exc)))
             text = ""
-        self.post_message(TranscriptReady(text))
-
-    def on_transcript_ready(self, message: TranscriptReady) -> None:
-        """Re-enable input and submit the transcript, or report an empty one."""
-        self.query_one(StatusBar).set_mic_state(MIC_LISTO)
-        self.query_one("#input-line").disabled = False
-        if message.text:
-            self._submit_text(message.text)
-        else:
-            self.query_one(ConversationLog).append_turn(Speaker.ASSISTANT, EMPTY_TRANSCRIPT_TEXT)
+        self._dispatch.put(TranscriptReady(text))
 
     def _submit_text(self, text: str) -> None:
         """Log the user's turn and hand it to the orchestrator in the background."""
-        self.query_one(ConversationLog).append_turn(Speaker.USER, text)
-        self.query_one(AvatarPane).set_state(AvatarState.THINKING)
-        self.run_worker(self._run_turn(text), group=_TURN_WORKER_GROUP)
+        self.conversation_view.append_turn(Speaker.USER, text)
+        self.avatar_pane.set_state(AvatarState.THINKING)
+        self._bridge.submit(self._run_turn(text))
 
     async def _run_turn(self, text: str) -> None:
         """Resolve one turn end-to-end and post its reply back to the UI."""
         reply = await self._orchestrator.handle_user_text(text)
-        self.post_message(AssistantReplied(reply))
+        self._dispatch.put(AssistantReplied(reply))
 
-    def on_assistant_replied(self, message: AssistantReplied) -> None:
-        """Log any fallback notice and the reply, then speak it if TTS is enabled."""
-        log = self.query_one(ConversationLog)
-        if message.reply.system_notice:
-            log.append_turn(Speaker.SYSTEM, message.reply.system_notice)
-        log.append_turn(Speaker.ASSISTANT, message.reply.text)
-        if self._tts_enabled:
-            self.run_worker(self._speak(message.reply.text), group=_SPEAKING_WORKER_GROUP)
-        else:
-            self.query_one(AvatarPane).set_state(AvatarState.IDLE)
+    def _start_speaking(self, text: str) -> None:
+        """Show the speaking state and synthesize `text` in the background."""
+        self.avatar_pane.set_state(AvatarState.SPEAKING)
+        self._bridge.submit(self._speak(text))
 
     async def _speak(self, text: str) -> None:
-        """Show the speaking state for exactly as long as playback lasts."""
-        self.query_one(AvatarPane).set_state(AvatarState.SPEAKING)
+        """Play `text` back, reporting a failure but always signaling completion."""
         try:
             await speak(self._tts, self._player, text)
         except SynthesisError as exc:
-            self.post_message(ErrorOccurred(str(exc)))
-        self.query_one(AvatarPane).set_state(AvatarState.IDLE)
+            self._dispatch.put(ErrorOccurred(str(exc)))
+        self._dispatch.put(SpeakingFinished())
 
-    def _start_emotion_worker(self) -> None:
-        """(Re)start the webcam sampling loop as a background worker."""
-        self.run_worker(
-            sample_emotion_forever(
-                self._camera,
-                self._emotion_detector,
-                self._preview_interval_seconds,
-                self._emotion_interval_seconds,
-                self._on_emotion,
-            ),
-            group=_EMOTION_WORKER_GROUP,
-        )
+    def _start_camera_worker(self) -> None:
+        """(Re)start the webcam sampling loop as a background OS thread."""
+        timing = CameraTiming(self._camera_frame_interval_seconds, self._emotion_interval_seconds)
+        callbacks = CameraCallbacks(on_sample=self._on_camera_sample, on_error=self._on_camera_error)
+        self._camera_worker = CameraWorker(self._camera, self._emotion_detector, timing, callbacks)
+        self._camera_worker.start()
 
-    def _on_emotion(self, sample: EmotionSample | None) -> None:
-        """Forward one webcam sample from the worker loop to the UI thread."""
-        self.post_message(EmotionUpdated(sample))
+    def _on_camera_sample(self, sample: CameraSample | None) -> None:
+        """Forward one webcam sample from the worker thread to the UI thread."""
+        self._dispatch.put(CameraSampleReady(sample))
 
-    def on_emotion_updated(self, message: EmotionUpdated) -> None:
-        """Refresh the preview and, above the confidence cutoff, the avatar."""
-        self.query_one(CameraPreview).update_sample(message.sample)
-        if message.sample is None or message.sample.reading is None:
-            self.query_one(StatusBar).set_no_face()
-            return
-        emotion, confidence = message.sample.reading
-        self.query_one(StatusBar).set_emotion(emotion.value, confidence)
-        if confidence >= EMOTION_LOW_CONFIDENCE_THRESHOLD:
-            self._conversation.set_last_emotion(emotion)
-            self.query_one(AvatarPane).set_emotion(emotion)
-
-    def on_error_occurred(self, message: ErrorOccurred) -> None:
-        """Report a background failure as a SYS log line."""
-        self.query_one(ConversationLog).append_turn(Speaker.SYSTEM, message.detail)
+    def _on_camera_error(self, detail: str) -> None:
+        """Forward the worker thread's terminal failure to the UI thread."""
+        self._dispatch.put(CameraFailed(detail))
