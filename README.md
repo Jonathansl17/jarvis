@@ -31,7 +31,9 @@ app/         user-facing application (placeholder)
 Every notebook downloads its own dataset with `kagglehub` (or from a public
 URL), so it runs unchanged in Google Colab and locally. Open the `.ipynb` in
 Colab and run all cells. The last cells save the trained model to
-`models/<name>.joblib`, two levels above the notebook.
+`models/<name>.joblib`, two levels above the notebook. The folder `models/` also holds
+`facial_emotion_cnn.onnx` and `haarcascade_frontalface_alt.xml`, used by the app
+to read the user's emotion from the webcam.
 
 Local run:
 
