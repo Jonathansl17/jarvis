@@ -59,6 +59,13 @@ class JarvisActions:
             self._camera_worker.stop()
             self.camera_preview.show_disabled()
             self.camera_toggle_button.configure(text=strings.CAMERA_TOGGLE_OFF)
+            self._forget_emotion()
+
+    def _forget_emotion(self) -> None:
+        """With the camera off there is no emotion: neutral avatar, plain tone."""
+        self._conversation.set_last_emotion(None)
+        self.avatar_pane.set_emotion(None)
+        self.status_bar.set_camera_disabled()
 
     def on_quit(self) -> None:
         """Release the camera and audio handles, then close the window."""

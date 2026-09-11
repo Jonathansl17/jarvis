@@ -73,17 +73,15 @@ class JarvisDispatchHandlers:
         """Refresh the preview and, above the confidence cutoff, the avatar.
 
         The status strip always mirrors the camera card's own emotion word
-        exactly; only mirroring the avatar (and remembering the emotion for
-        tone) is gated by the confidence cutoff.
+        exactly. No face means no emotion: the avatar and the tone go back
+        to neutral instead of keeping the last reading.
         """
         self.camera_preview.update_sample(message.sample)
         sample = message.sample
         if sample is None:
             return
         self.status_bar.set_emotion_reading(sample.reading)
-        if sample.reading is None:
-            return
-        emotion, _confidence = sample.reading
+        emotion = sample.reading[0] if sample.reading is not None else None
         self._conversation.set_last_emotion(emotion)
         self.avatar_pane.set_emotion(emotion)
 
