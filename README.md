@@ -37,7 +37,7 @@ Local run:
 
 ```bash
 python3 -m venv env
-./env/bin/pip install pandas numpy scikit-learn statsmodels matplotlib seaborn plotly kagglehub jupyter
+./env/bin/pip install -r notebooks/requirements.txt
 ./env/bin/jupyter notebook notebooks/
 ```
 
