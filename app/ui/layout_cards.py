@@ -10,7 +10,7 @@ from app.ui import strings, theme
 
 _CARD_CORNER_RADIUS_PX = 12
 _CARD_PADDING_PX = 14
-_CAMERA_TOGGLE_SIZE_PX = (44, 22)
+_CAMERA_TOGGLE_SIZE_PX = (64, 32)
 
 
 def make_card(
@@ -46,7 +46,7 @@ def build_camera_toggle_button(
         width=width,
         height=height,
         corner_radius=height // 2,
-        font=fonts.body_small,
+        font=fonts.label,
         fg_color=theme.COLOR_ACCENT_PRIMARY,
         text_color=theme.COLOR_BG_APP,
         command=on_camera_toggle,

@@ -14,11 +14,13 @@ import customtkinter as ctk
 from app.ui import strings, theme
 from app.ui.theme import Fonts
 
-_ROW_HEIGHT_PX = 56
-_ROW_CORNER_RADIUS_PX = 10
+_ENTRY_HEIGHT_PX = 52
 _ROW_PADDING_PX = 8
-_BUTTON_SIZE_PX = 40
-_BUTTON_GAP_PX = 8
+_ROW_HEIGHT_PX = _ENTRY_HEIGHT_PX + 2 * _ROW_PADDING_PX
+_ROW_CORNER_RADIUS_PX = 10
+_MIC_BUTTON_SIZE_PX = (96, 56)
+_SEND_BUTTON_SIZE_PX = (56, 56)
+_BUTTON_GAP_PX = 12
 
 _PULSE_PERIOD_MS = 800
 _PULSE_BORDER_WIDTHS = (2, 4)
@@ -42,17 +44,20 @@ class InputRow(ctk.CTkFrame):
         self._pulse_job: str | None = None
         self._pulse_phase = 0
 
-        self.entry = ctk.CTkEntry(self, placeholder_text=strings.ENTRY_PLACEHOLDER, font=fonts.entry)
+        self.entry = ctk.CTkEntry(
+            self, placeholder_text=strings.ENTRY_PLACEHOLDER, font=fonts.entry, height=_ENTRY_HEIGHT_PX
+        )
         self.entry.pack(side="left", fill="x", expand=True, padx=(_ROW_PADDING_PX, _BUTTON_GAP_PX), pady=_ROW_PADDING_PX)
         self.entry.bind("<Return>", lambda _event: on_send())
 
+        mic_width, mic_height = _MIC_BUTTON_SIZE_PX
         self.mic_button = ctk.CTkButton(
             self,
             text=strings.MIC_BUTTON_IDLE,
-            font=fonts.label,
-            width=_BUTTON_SIZE_PX,
-            height=_BUTTON_SIZE_PX,
-            corner_radius=_BUTTON_SIZE_PX // 2,
+            font=fonts.button,
+            width=mic_width,
+            height=mic_height,
+            corner_radius=mic_height // 2,
             fg_color="transparent",
             text_color=theme.COLOR_ACCENT_PRIMARY,
             border_width=2,
@@ -61,13 +66,14 @@ class InputRow(ctk.CTkFrame):
         )
         self.mic_button.pack(side="left", padx=(0, _BUTTON_GAP_PX), pady=_ROW_PADDING_PX)
 
+        send_width, send_height = _SEND_BUTTON_SIZE_PX
         self.send_button = ctk.CTkButton(
             self,
             text=strings.SEND_BUTTON,
-            font=fonts.label,
-            width=_BUTTON_SIZE_PX,
-            height=_BUTTON_SIZE_PX,
-            corner_radius=_BUTTON_SIZE_PX // 2,
+            font=fonts.button,
+            width=send_width,
+            height=send_height,
+            corner_radius=send_height // 2,
             fg_color=theme.COLOR_ACCENT_PRIMARY,
             text_color=theme.COLOR_BG_APP,
             command=on_send,

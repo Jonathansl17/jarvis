@@ -7,7 +7,8 @@ display, per the architecture plan's dependency-direction rule.
 from PIL import Image, ImageDraw
 
 from app.ui.avatar.expressions import Expression, cheeks_for
-from app.ui.avatar.shapes import BELLY, BODY, FEET, HEAD, CANVAS_SIZE_PX, Ellipse, Line, Polygon, Shape
+from app.ui.avatar.shape_transforms import translate_shapes
+from app.ui.avatar.shapes import BELLY, FEET, HEAD, CANVAS_SIZE_PX, Ellipse, Line, Polygon, Shape
 from app.ui.avatar.spec import PenguinPose
 
 
@@ -34,7 +35,10 @@ def _z_order(pose: PenguinPose, expression: Expression | None) -> tuple[Shape, .
     eyebrows = expression.eyebrows if expression is not None else ()
     cheeks = cheeks_for(expression)
     glow = (pose.glow_ring,) if pose.glow_ring is not None else ()
-    return glow + FEET + (BODY, HEAD, BELLY) + flippers + cheeks + eyes + eyebrows + beak + pose.extra
+    shapes = glow + FEET + (pose.body, HEAD, BELLY) + flippers + cheeks + eyes + eyebrows + beak + pose.extra
+    if pose.vertical_offset_px:
+        shapes = translate_shapes(shapes, pose.vertical_offset_px)
+    return shapes
 
 
 def _draw_shape(draw: ImageDraw.ImageDraw, shape: Shape) -> None:

@@ -2,13 +2,18 @@
 error line (§13 of the design spec, extended with an IA field — system
 notices and background errors surface here, never as chat lines). The key
 hints live in the separate `KeyHintsBar` row above this one.
+
+The EMO field always shows the exact same text as the camera card's
+emotion word (`ui.emotion_label.format_emotion_reading`); there is no
+separate "uncertain" wording here — the confidence cutoff only decides
+whether the avatar mirrors an emotion, never what either label says.
 """
 
 import customtkinter as ctk
 
-from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
-from app.emotion.spanish_labels import NO_FACE_TEXT
+from app.emotion.protocol import Emotion
 from app.ui import strings, theme
+from app.ui.emotion_label import format_emotion_reading
 from app.ui.theme import Fonts
 
 _STRIP_HEIGHT_PX = 32
@@ -19,9 +24,6 @@ _DOT_PADDING_PX = 6
 MIC_IDLE = strings.STATUS_MIC_IDLE
 MIC_RECORDING = strings.STATUS_MIC_RECORDING
 MIC_OFF = strings.STATUS_MIC_OFF
-
-EMO_DISABLED = "desactivado"
-EMO_UNCERTAIN = "incierto"
 
 API_CONNECTED = strings.STATUS_API_CONNECTED
 API_ERROR = strings.STATUS_API_ERROR
@@ -66,20 +68,15 @@ class StatusBar(ctk.CTkFrame):
         self._mic_text.configure(text=state)
         self._mic_dot.configure(fg_color=_dot_color(state))
 
-    def set_emotion(self, label: str, confidence: float) -> None:
-        """Update the EMO field, showing `incierto` below the confidence cutoff."""
-        text = EMO_UNCERTAIN if confidence < EMOTION_LOW_CONFIDENCE_THRESHOLD else label
-        self._emo_text.configure(text=text)
-        self._emo_dot.configure(fg_color=theme.COLOR_SUCCESS)
-
-    def set_no_face(self) -> None:
-        """Show that the camera is on but no face is currently detected."""
-        self._emo_text.configure(text=NO_FACE_TEXT)
-        self._emo_dot.configure(fg_color=theme.COLOR_ACCENT_SECONDARY)
+    def set_emotion_reading(self, reading: tuple[Emotion, float] | None) -> None:
+        """Show the same text the camera card shows for `reading` (or no face)."""
+        self._emo_text.configure(text=format_emotion_reading(reading))
+        dot_color = theme.COLOR_SUCCESS if reading is not None else theme.COLOR_ACCENT_SECONDARY
+        self._emo_dot.configure(fg_color=dot_color)
 
     def set_camera_disabled(self) -> None:
         """Show that the webcam emotion sampler is turned off."""
-        self._emo_text.configure(text=EMO_DISABLED)
+        self._emo_text.configure(text=strings.CAMERA_DISABLED_LABEL)
         self._emo_dot.configure(fg_color=theme.COLOR_DANGER)
 
     def set_api_state(self, state: str) -> None:

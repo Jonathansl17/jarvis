@@ -13,11 +13,11 @@ from PIL import Image
 from app.emotion.face_locator import BoundingBox
 from app.emotion.protocol import Emotion
 
-VIDEO_WIDTH_PX = 320
-VIDEO_HEIGHT_PX = 240
+VIDEO_WIDTH_PX = 368
+VIDEO_HEIGHT_PX = 276
 # `#2DE2C9` in BGR order, since `cv2.rectangle` expects BGR (§8, §16).
 FACE_BOX_COLOR_BGR = (201, 226, 45)
-FACE_BOX_THICKNESS_PX = 2
+FACE_BOX_THICKNESS_PX = 3
 
 
 def render_camera_frame(

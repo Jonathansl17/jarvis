@@ -63,21 +63,28 @@ class JarvisDispatchHandlers:
         if self._tts_enabled:
             self._start_speaking(message.reply.text)
         else:
-            self.avatar_pane.set_state(AvatarState.IDLE)
+            self.avatar_pane.finish_reply()
 
     def _on_speaking_finished(self, _message: SpeakingFinished) -> None:
-        """Return the avatar to idle once TTS playback ends."""
-        self.avatar_pane.set_state(AvatarState.IDLE)
+        """Return the avatar to idle once TTS playback ends, hopping first if
+        the mirrored emotion the user is showing is happy or surprise."""
+        self.avatar_pane.finish_reply()
 
     def _on_camera_sample_ready(self, message: CameraSampleReady) -> None:
-        """Refresh the preview and, above the confidence cutoff, the avatar."""
+        """Refresh the preview and, above the confidence cutoff, the avatar.
+
+        The status strip always mirrors the camera card's own emotion word
+        exactly; only mirroring the avatar (and remembering the emotion for
+        tone) is gated by the confidence cutoff.
+        """
         self.camera_preview.update_sample(message.sample)
         sample = message.sample
-        if sample is None or sample.reading is None:
-            self.status_bar.set_no_face()
+        if sample is None:
+            return
+        self.status_bar.set_emotion_reading(sample.reading)
+        if sample.reading is None:
             return
         emotion, confidence = sample.reading
-        self.status_bar.set_emotion(emotion.value, confidence)
         if confidence >= EMOTION_LOW_CONFIDENCE_THRESHOLD:
             self._conversation.set_last_emotion(emotion)
             self.avatar_pane.set_emotion(emotion)

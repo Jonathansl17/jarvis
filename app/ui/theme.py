@@ -45,9 +45,22 @@ _MONO_FALLBACK_OTHER = "Courier New"
 _DEFAULT_SANS = "Helvetica"
 
 
+_FONT_SIZE_TITLE_PX = 20
+_FONT_SIZE_CARD_TITLE_PX = 20
+_FONT_SIZE_BODY_PX = 17
+_FONT_SIZE_BODY_SMALL_PX = 12
+_FONT_SIZE_LABEL_PX = 14
+_FONT_SIZE_EMOTION_WORD_PX = 18
+_FONT_SIZE_STATUS_PX = 15
+_FONT_SIZE_ENTRY_PX = 17
+_FONT_SIZE_BUTTON_PX = 16
+
+
 @dataclass(frozen=True)
 class Fonts:
-    """The named font roles from §5's typography table."""
+    """The named font roles from §5's typography table, raised ~40% for
+    readability at the app's target 2012x1080 resolution.
+    """
 
     title: ctk.CTkFont
     card_title: ctk.CTkFont
@@ -57,6 +70,7 @@ class Fonts:
     emotion_word: ctk.CTkFont
     status: ctk.CTkFont
     entry: ctk.CTkFont
+    button: ctk.CTkFont
 
 
 def apply_theme() -> Fonts:
@@ -64,14 +78,15 @@ def apply_theme() -> Fonts:
     ctk.set_appearance_mode("dark")
     sans, mono = _resolve_sans_family(), _resolve_mono_family()
     return Fonts(
-        title=ctk.CTkFont(family=sans, size=20, weight="bold"),
-        card_title=ctk.CTkFont(family=sans, size=14, weight="bold"),
-        body=ctk.CTkFont(family=sans, size=14, weight="normal"),
-        body_small=ctk.CTkFont(family=sans, size=12, weight="normal"),
-        label=ctk.CTkFont(family=sans, size=12, weight="bold"),
-        emotion_word=ctk.CTkFont(family=sans, size=14, weight="bold"),
-        status=ctk.CTkFont(family=mono, size=11, weight="normal"),
-        entry=ctk.CTkFont(family=sans, size=14, weight="normal"),
+        title=ctk.CTkFont(family=sans, size=_FONT_SIZE_TITLE_PX, weight="bold"),
+        card_title=ctk.CTkFont(family=sans, size=_FONT_SIZE_CARD_TITLE_PX, weight="bold"),
+        body=ctk.CTkFont(family=sans, size=_FONT_SIZE_BODY_PX, weight="normal"),
+        body_small=ctk.CTkFont(family=sans, size=_FONT_SIZE_BODY_SMALL_PX, weight="normal"),
+        label=ctk.CTkFont(family=sans, size=_FONT_SIZE_LABEL_PX, weight="bold"),
+        emotion_word=ctk.CTkFont(family=sans, size=_FONT_SIZE_EMOTION_WORD_PX, weight="bold"),
+        status=ctk.CTkFont(family=mono, size=_FONT_SIZE_STATUS_PX, weight="normal"),
+        entry=ctk.CTkFont(family=sans, size=_FONT_SIZE_ENTRY_PX, weight="normal"),
+        button=ctk.CTkFont(family=sans, size=_FONT_SIZE_BUTTON_PX, weight="bold"),
     )
 
 

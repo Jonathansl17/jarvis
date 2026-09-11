@@ -5,6 +5,7 @@ strip, per §2-3 of the design spec. Pure Tk composition, no app behavior.
 import customtkinter as ctk
 
 from app.ui import strings, theme
+from app.ui.camera_render import VIDEO_HEIGHT_PX
 from app.ui.layout_cards import build_camera_toggle_button, make_card
 from app.ui.layout_types import WindowCallbacks, WindowStartupState, WindowWidgets
 from app.ui.widgets.avatar_pane import AvatarPane
@@ -14,13 +15,19 @@ from app.ui.widgets.input_row import InputRow
 from app.ui.widgets.key_hints_bar import KeyHintsBar
 from app.ui.widgets.status_bar import StatusBar
 
-WINDOW_SIZE = "1100x700"
-WINDOW_MIN_SIZE = (1000, 650)
-_LEFT_COLUMN_WIDTH_PX = 308
+WINDOW_SIZE = "1280x800"
+WINDOW_MIN_SIZE = (1100, 720)
+_LEFT_COLUMN_WIDTH_PX = 400
 WINDOW_PADDING_PX = 16
 _COLUMN_GAP_PX = 16
 _CARD_GAP_PX = 12
 _CARD_PADDING_PX = 14
+
+# The camera card is fixed-height (not grid-stretched, unlike the avatar
+# card above it); its height is the sum of its own content, so it never
+# leaves dead space below the video like a grid-stretched card would.
+_CAMERA_CARD_HEADER_HEIGHT_PX = 44
+_CAMERA_CARD_EMOTION_ROW_HEIGHT_PX = 34
 
 
 def build_window(
@@ -70,12 +77,14 @@ def _build_left_column(
     column = ctk.CTkFrame(root, width=_LEFT_COLUMN_WIDTH_PX, fg_color="transparent")
     column.grid(row=0, column=0, sticky="ns", padx=(WINDOW_PADDING_PX, _COLUMN_GAP_PX // 2), pady=WINDOW_PADDING_PX)
     column.grid_propagate(False)
-    column.grid_rowconfigure(1, weight=1)
+    column.grid_rowconfigure(0, weight=1)
+    column.grid_rowconfigure(1, weight=0)
 
     avatar_card = make_card(column, fonts, strings.CARD_TITLE_AVATAR)
-    avatar_card.grid(row=0, column=0, sticky="ew")
+    avatar_card.grid(row=0, column=0, sticky="nsew")
+    avatar_card.grid_propagate(False)
     avatar_pane = AvatarPane(avatar_card)
-    avatar_pane.pack(pady=(0, _CARD_PADDING_PX // 2))
+    avatar_pane.pack(expand=True)
 
     camera_toggle_button = None
 
@@ -87,11 +96,22 @@ def _build_left_column(
         return camera_toggle_button
 
     camera_card = make_card(column, fonts, strings.CARD_TITLE_CAMERA, right_widget_factory=_attach_toggle)
-    camera_card.grid(row=1, column=0, sticky="nsew", pady=(_CARD_GAP_PX, 0))
+    camera_card.configure(height=_camera_card_height_px())
+    camera_card.grid(row=1, column=0, sticky="ew", pady=(_CARD_GAP_PX, 0))
     camera_card.grid_propagate(False)
     camera_preview = CameraPreview(camera_card, fonts)
     camera_preview.pack()
     return avatar_pane, camera_preview, camera_toggle_button
+
+
+def _camera_card_height_px() -> int:
+    """The camera card's fixed height: header, video, emotion word, padding."""
+    return (
+        _CAMERA_CARD_HEADER_HEIGHT_PX
+        + VIDEO_HEIGHT_PX
+        + _CAMERA_CARD_EMOTION_ROW_HEIGHT_PX
+        + _CARD_PADDING_PX
+    )
 
 
 def _build_right_column(

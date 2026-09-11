@@ -11,13 +11,13 @@ import customtkinter as ctk
 from PIL import Image
 
 from app.emotion.protocol import Emotion
-from app.emotion.spanish_labels import EMOTION_LABELS_ES, NO_FACE_TEXT
 from app.ui import strings, theme
 from app.ui.camera_render import VIDEO_HEIGHT_PX, VIDEO_WIDTH_PX, render_camera_frame
+from app.ui.emotion_label import format_emotion_reading
 from app.ui.theme import Fonts
 from app.workers.camera_worker import CameraSample
 
-_VIDEO_EMOTION_GAP_PX = 8
+_VIDEO_EMOTION_GAP_PX = 10
 
 
 class CameraPreview(ctk.CTkFrame):
@@ -58,8 +58,8 @@ class CameraPreview(ctk.CTkFrame):
 
 def _emotion_label_kwargs(reading: tuple[Emotion, float] | None) -> dict[str, str]:
     """Build the emotion-word label's text and color for one reading."""
+    text = format_emotion_reading(reading)
     if reading is None:
-        return {"text": NO_FACE_TEXT.upper(), "text_color": theme.COLOR_TEXT_SECONDARY}
+        return {"text": text, "text_color": theme.COLOR_TEXT_SECONDARY}
     emotion, _confidence = reading
-    color = theme.EMOTION_LABEL_COLORS[emotion.value]
-    return {"text": EMOTION_LABELS_ES[emotion].upper(), "text_color": color}
+    return {"text": text, "text_color": theme.EMOTION_LABEL_COLORS[emotion.value]}

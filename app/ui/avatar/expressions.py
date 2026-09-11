@@ -36,6 +36,11 @@ def map_emotion_to_avatar(emotion: Emotion) -> Emotion:
     return _AVATAR_EMOTION_FOR[emotion]
 
 
+# Emotions that trigger the avatar's one-time post-reply hop; a subset of
+# the mirroring table above, not a policy of its own.
+HOP_TRIGGER_EMOTIONS = frozenset({Emotion.HAPPY, Emotion.SURPRISE})
+
+
 @dataclass(frozen=True)
 class Expression:
     """Overrides a pose's default eyes/beak/eyebrows/flippers/cheeks."""

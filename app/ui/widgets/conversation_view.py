@@ -9,9 +9,9 @@ from app.ui import strings, theme
 from app.ui.theme import Fonts
 
 _TIMESTAMP_FORMAT = "%H:%M:%S"
-_BUBBLE_CORNER_RADIUS_PX = 10
+_BUBBLE_CORNER_RADIUS_PX = 12
 _BUBBLE_WRAP_FRACTION = 0.70
-_BUBBLE_PADDING_PX = (12, 8)
+_BUBBLE_PADDING_PX = (14, 10)
 _TURN_GAP_PX = 14
 _FALLBACK_WIDTH_PX = 700  # Used only before the first layout pass reports a real width.
 

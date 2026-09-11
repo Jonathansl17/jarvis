@@ -5,11 +5,14 @@ from PIL import Image
 
 from app.emotion.protocol import Emotion
 from app.ui.avatar.animator import AvatarAnimator
-from app.ui.avatar.expressions import Expression, resolve_expression
+from app.ui.avatar.expressions import Expression, HOP_TRIGGER_EMOTIONS, map_emotion_to_avatar, resolve_expression
 from app.ui.avatar.renderer import render_pose
 from app.ui.avatar.spec import POSES, AvatarState
 
-_AVATAR_SIZE_PX = (200, 200)
+# The whole drawing spec is drawn on `shapes.CANVAS_SIZE_PX` (260) and
+# resized here by one scale factor, per `render_pose` — no coordinate in
+# `avatar/shapes.py` is retyped to reach this larger on-screen size.
+_AVATAR_SIZE_PX = (380, 380)
 
 _FrameKey = tuple[AvatarState, int, Emotion | None]
 
@@ -20,6 +23,7 @@ class AvatarPane(ctk.CTkLabel):
     def __init__(self, master: ctk.CTkBaseClass, **kwargs: object) -> None:
         super().__init__(master, text="", **kwargs)
         self._image_cache: dict[_FrameKey, Image.Image] = {}
+        self._current_emotion: Emotion | None = None
         self._animator = AvatarAnimator(
             schedule=self.after, render=self._render_frame, on_frame=self._show_frame
         )
@@ -31,7 +35,17 @@ class AvatarPane(ctk.CTkLabel):
 
     def set_emotion(self, emotion: Emotion | None) -> None:
         """Update the emotion overlaid on the avatar's current state."""
+        self._current_emotion = emotion
         self._animator.set_emotion(emotion)
+
+    def finish_reply(self) -> None:
+        """Return to idle after a reply, hopping once first if the mirrored
+        emotion the user is showing is happy or surprise."""
+        mirrored = map_emotion_to_avatar(self._current_emotion) if self._current_emotion is not None else None
+        if mirrored in HOP_TRIGGER_EMOTIONS:
+            self._animator.play_hop_then_idle()
+        else:
+            self.set_state(AvatarState.IDLE)
 
     def destroy(self) -> None:
         """Stop the animation timer before the widget is torn down."""
