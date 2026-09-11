@@ -61,7 +61,12 @@ class StatusBar(ctk.CTkFrame):
         self.set_camera_disabled()
         self.set_api_state(API_CONNECTED)
         self.set_ia_state(initial_ia_state)
-        self._stt_text.configure(text=stt_engine_name)
+        self.set_stt_engine(stt_engine_name)
+
+    def set_stt_engine(self, engine_name: str) -> None:
+        """Show the loaded speech-to-text engine as active."""
+        self._stt_text.configure(text=engine_name)
+        self._stt_dot.configure(fg_color=theme.COLOR_SUCCESS)
 
     def set_mic_state(self, state: str) -> None:
         """Update the MIC field to `state` (en reposo, grabando, or apagado)."""
