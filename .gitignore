@@ -2,4 +2,3 @@ env/
 .ipynb_checkpoints/
 __pycache__/
 .env
-app/google-credentials.json
