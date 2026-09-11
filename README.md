@@ -37,16 +37,18 @@ Local run:
 
 ```bash
 python3 -m venv env
-./env/bin/pip install -r notebooks/requirements.txt
-./env/bin/jupyter notebook notebooks/
+source env/bin/activate
+pip install -r notebooks/requirements.txt
+jupyter notebook notebooks/
 ```
 
 ## API
 
 ```bash
-./env/bin/pip install -r api/requirements.txt
+source env/bin/activate
+pip install -r api/requirements.txt
 cd api
-../env/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 Interactive docs at `http://localhost:8000/docs`. Endpoints:
