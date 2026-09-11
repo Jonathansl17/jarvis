@@ -59,6 +59,7 @@ Interactive docs at `http://localhost:8000/docs`. Endpoints:
 |--------|------|--------------|
 | GET | `/health` | liveness |
 | GET | `/models` | names of the loaded models |
+| GET | `/models/{model_name}/schema` | JSON schema of that model's request body |
 | POST | `/predict/{model_name}` | runs one model on a JSON body |
 
 The models are loaded once at startup from `models/`. Nothing is trained on

@@ -12,6 +12,7 @@ BUNDLE_FILE_SUFFIX = ".joblib"
 
 PREDICT_ROUTE_PREFIX = "/predict"
 MODELS_ROUTE = "/models"
+MODEL_SCHEMA_ROUTE = MODELS_ROUTE + "/{model_name}/schema"
 HEALTH_ROUTE = "/health"
 
 # stroke_classification: booleans encoded 1/0 by the training notebook,
