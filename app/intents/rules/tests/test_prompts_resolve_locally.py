@@ -23,7 +23,7 @@ class PromptsResolveLocallyTests(unittest.IsolatedAsyncioTestCase):
     async def test_every_example_sentence_resolves_with_no_missing_fields(self) -> None:
         parser = RulesParser()
         sentences = _load_example_sentences()
-        self.assertEqual(len(sentences), 10, "expected all ten example sentences")
+        self.assertEqual(len(sentences), 30, "expected three example sentences per model")
         for sentence in sentences:
             text = strip_wake_word(sentence)
             with self.subTest(sentence=sentence):
