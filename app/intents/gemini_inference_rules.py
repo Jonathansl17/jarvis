@@ -91,7 +91,13 @@ MODEL_INFERENCE_RULES: dict[str, tuple[str, ...]] = {
         "TechSupport, StreamingTV, StreamingMovies, PaperlessBilling, Partner, Dependents, "
         "PhoneService, MultipleLines) son 'Yes'/'No' de 'tiene'/'no tiene'; pídelos si el "
         "usuario no los menciona, no asumas 'No' por defecto",
-        "tenure está en meses (p. ej. 'dos años' -> 24)",
+        "si el cliente no tiene internet (InternetService 'No'), entonces OnlineSecurity, "
+        "OnlineBackup, DeviceProtection, TechSupport, StreamingTV y StreamingMovies son "
+        "'No internet service' sin preguntar; si no tiene teléfono, MultipleLines es "
+        "'No phone service'; 'una sola línea' es MultipleLines 'No' y 'varias líneas' es 'Yes'",
+        "'sin pareja ni dependientes' es Partner 'No' y Dependents 'No'; 'con pareja y "
+        "dependientes' es 'Yes' en ambos; 'sin streaming de tele ni películas' es 'No' en ambos",
+        "tenure está en meses (p. ej. 'dos años' -> 24, 'lleva 3 meses' -> 3)",
         "MonthlyCharges y TotalCharges están en dólares; TotalCharges es opcional y, si falta, "
         "infiérelo como tenure * MonthlyCharges en vez de preguntarlo",
     ),
