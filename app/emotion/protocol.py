@@ -22,6 +22,10 @@ class Emotion(StrEnum):
 
 
 class EmotionDetector(Protocol):
-    """Classifies the dominant emotion visible in one webcam frame."""
+    """Classifies the dominant emotion visible in one webcam frame.
 
-    def detect(self, frame: npt.NDArray[np.uint8]) -> Emotion | None: ...
+    Returns the emotion paired with the model's confidence for it (0.0-1.0),
+    or `None` if no face was found.
+    """
+
+    def detect(self, frame: npt.NDArray[np.uint8]) -> tuple[Emotion, float] | None: ...

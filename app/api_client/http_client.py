@@ -4,7 +4,13 @@ from typing import Any
 
 import httpx
 
-from app.constants import HEALTH_ROUTE, MODELS_ROUTE, OPENAPI_ROUTE, PREDICT_ROUTE_PREFIX
+from app.constants import (
+    HEALTH_ROUTE,
+    MODEL_SCHEMA_ROUTE_TEMPLATE,
+    MODELS_ROUTE,
+    OPENAPI_ROUTE,
+    PREDICT_ROUTE_PREFIX,
+)
 from app.errors import PredictionRequestError
 
 _REQUEST_TIMEOUT_SECONDS = 10.0
@@ -26,6 +32,12 @@ class HttpPredictionClient:
         """Return the names of every model the API currently serves."""
         response = await self._request("GET", MODELS_ROUTE)
         return response.json()["models"]
+
+    async def model_schema(self, model_name: str) -> dict[str, Any]:
+        """Return the JSON request schema one model expects."""
+        route = MODEL_SCHEMA_ROUTE_TEMPLATE.format(model_name=model_name)
+        response = await self._request("GET", route)
+        return response.json()
 
     async def openapi_schema(self) -> dict[str, Any]:
         """Return the API's OpenAPI schema, used to prompt Gemini."""

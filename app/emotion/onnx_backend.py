@@ -29,8 +29,8 @@ class OnnxEmotionDetector:
 
         self._input_name = self._session.get_inputs()[0].name
 
-    def detect(self, frame: npt.NDArray[np.uint8]) -> Emotion | None:
-        """Return the dominant emotion in `frame`, or `None` if no face is found."""
+    def detect(self, frame: npt.NDArray[np.uint8]) -> tuple[Emotion, float] | None:
+        """Return the dominant emotion in `frame` with its confidence, or `None`."""
         box = self._face_locator.locate(frame)
         if box is None:
             return None
@@ -41,7 +41,9 @@ class OnnxEmotionDetector:
         except Exception as exc:  # onnxruntime raises its own Fail/RuntimeException types
             raise EmotionDetectionError("Failed to classify face crop") from exc
 
-        return list(Emotion)[int(np.argmax(scores))]
+        probabilities = _softmax(scores)
+        index = int(np.argmax(probabilities))
+        return list(Emotion)[index], float(probabilities[index])
 
     def _preprocess(
         self, frame: npt.NDArray[np.uint8], box: BoundingBox
@@ -52,3 +54,10 @@ class OnnxEmotionDetector:
         resized = cv2.resize(crop, (EMOTION_INPUT_SIZE_PX, EMOTION_INPUT_SIZE_PX))
         normalized = resized.astype(np.float32) / _PIXEL_FULL_SCALE
         return normalized.reshape(1, EMOTION_INPUT_SIZE_PX, EMOTION_INPUT_SIZE_PX, 1)
+
+
+def _softmax(scores: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+    """Return `scores` normalized into a probability distribution."""
+    shifted = scores - np.max(scores)
+    exponentials = np.exp(shifted)
+    return exponentials / np.sum(exponentials)

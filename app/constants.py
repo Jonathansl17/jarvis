@@ -12,6 +12,7 @@ DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
 
 PREDICT_ROUTE_PREFIX = "/predict"
 MODELS_ROUTE = "/models"
+MODEL_SCHEMA_ROUTE_TEMPLATE = MODELS_ROUTE + "/{model_name}/schema"
 HEALTH_ROUTE = "/health"
 OPENAPI_ROUTE = "/openapi.json"
 
@@ -21,6 +22,8 @@ WAKE_WORDS = ("jarvistec", "jarvis tec")
 
 MODELS_DIR_ENV_VAR = "MODELS_DIR"
 PIPER_CACHE_DIR_ENV_VAR = "PIPER_CACHE_DIR"
+CAMERA_ENABLED_ENV_VAR = "CAMERA_ENABLED"
+TTS_ENABLED_ENV_VAR = "TTS_ENABLED"
 
 FACIAL_EMOTION_MODEL_FILENAME = "facial_emotion_cnn.onnx"
 FACE_CASCADE_FILENAME = "haarcascade_frontalface_alt.xml"
@@ -31,7 +34,11 @@ EMOTION_INPUT_SIZE_PX = 48
 FACE_CASCADE_SCALE_FACTOR = 1.32
 FACE_CASCADE_MIN_NEIGHBORS = 5
 CAMERA_INDEX = 0
-EMOTION_SAMPLE_INTERVAL_SECONDS = 5.0
+EMOTION_SAMPLE_INTERVAL_SECONDS = 4.0
+# Below this softmax confidence, an emotion reading is reported as uncertain
+# rather than shown as a specific label, both in the status bar and the
+# avatar overlay.
+EMOTION_LOW_CONFIDENCE_THRESHOLD = 0.40
 
 STT_SAMPLE_RATE_HZ = 16000
 WHISPER_MODEL_SIZE = "small"
