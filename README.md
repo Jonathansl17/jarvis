@@ -1,7 +1,6 @@
-# AI project: machine learning assistant
+# Jarvis
 
-Group project for the Artificial Intelligence course (ITCR, San Carlos).
-Ten machine learning models built with CRISP-DM, a REST API that serves
+Group project for the Artificial Intelligence course. Ten machine learning models built with CRISP-DM, a REST API that serves
 them, and JarvisTEC, a desktop voice assistant that runs them from spoken
 Spanish while reading the user's emotion from the webcam.
 
