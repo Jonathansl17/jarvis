@@ -21,7 +21,7 @@ class ToneRule:
 
 TONE_RULES: dict[Emotion, ToneRule] = {
     Emotion.ANGRY: ToneRule(prefix="Tranquilo, ", suffix="", terse=True),
-    Emotion.DISGUST: ToneRule(prefix="Entiendo, ", suffix=""),
+    Emotion.DISGUST: ToneRule(prefix="¡Wákala! Esa cara lo dice todo. ", suffix=" Espero que esto no te dé más asco."),
     Emotion.FEAR: ToneRule(prefix="No te preocupes, ", suffix=" Estoy aquí para ayudarte."),
     Emotion.HAPPY: ToneRule(prefix="¡Genial! ", suffix=" Me alegra verte contento."),
     Emotion.SAD: ToneRule(prefix="", suffix=" Aquí estoy si necesitas algo más."),
