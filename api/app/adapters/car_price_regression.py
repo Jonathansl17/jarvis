@@ -5,12 +5,12 @@ from typing import Any, ClassVar
 import numpy as np
 import pandas as pd
 
-from app.adapters.base import RangeWarning, check_ranges
+from app.adapters.base import check_ranges, to_warning
 from app.schemas.car_price_regression import (
     CarPriceRegressionRequest,
     CarPriceRegressionResponse,
 )
-from app.schemas.common import PredictionMeta, Warning
+from app.schemas.common import PredictionMeta
 
 _CONSTANT_COLUMN = "const"
 _FUEL_COLUMNS = {"Diesel": "Fuel_Diesel", "CNG": "Fuel_CNG"}
@@ -41,7 +41,7 @@ class CarPriceRegressionAdapter:
         warnings = check_ranges(raw, self._training_range)
         return CarPriceRegressionResponse(
             predicted_price=predicted_price,
-            meta=PredictionMeta(model=self.name, warnings=[self._to_warning(w) for w in warnings]),
+            meta=PredictionMeta(model=self.name, warnings=[to_warning(w) for w in warnings]),
         )
 
     def _raw_values(self, request: CarPriceRegressionRequest) -> dict[str, float]:
@@ -67,8 +67,3 @@ class CarPriceRegressionAdapter:
         if request.transmission == "Automatic":
             row[_TRANSMISSION_AUTOMATIC_COLUMN] = 1.0
         return pd.DataFrame([{_CONSTANT_COLUMN: 1.0, **{f: row[f] for f in self._features}}])
-
-    @staticmethod
-    def _to_warning(warning: RangeWarning) -> Warning:
-        message = f"{warning.value} is outside the training range [{warning.low}, {warning.high}]"
-        return Warning(field=warning.field, message=message)

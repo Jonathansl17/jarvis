@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 
 import pandas as pd
 
+from app.adapters.base import frame_from_row
 from app.constants import CIRRHOSIS_SEX_POSITIVE, CIRRHOSIS_SIGN_POSITIVE
 from app.schemas.cirrhosis_type_classification import (
     CirrhosisTypeClassificationRequest,
@@ -57,7 +58,7 @@ class CirrhosisTypeClassificationAdapter:
         self._fill_labs(row, request)
         self._encode_signs(row, request)
         self._encode_drug(row, request)
-        return pd.DataFrame([[row[f] for f in self._features]], columns=self._features)
+        return frame_from_row(row, self._features)
 
     def _fill_labs(self, row: dict[str, float], request: CirrhosisTypeClassificationRequest) -> None:
         for field, value in self._fill_values.items():

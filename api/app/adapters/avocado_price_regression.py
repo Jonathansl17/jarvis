@@ -2,8 +2,7 @@
 
 from typing import Any, ClassVar
 
-import pandas as pd
-
+from app.adapters.base import frame_from_row
 from app.constants import AVOCADO_REGION_COLUMN_PREFIX
 from app.errors import InvalidInputError
 from app.schemas.avocado_price_regression import (
@@ -48,7 +47,7 @@ class AvocadoPriceRegressionAdapter:
         row["week"] = float(request.date.isocalendar().week)
         row["type_organic"] = float(self._type_encoding[request.type])
         row[region_column] = 1.0
-        frame = pd.DataFrame([[row[f] for f in self._features]], columns=self._features)
+        frame = frame_from_row(row, self._features)
         predicted_price = float(self._model.predict(frame)[0])
         return AvocadoPriceRegressionResponse(
             predicted_price=predicted_price, meta=PredictionMeta(model=self.name)

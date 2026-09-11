@@ -7,7 +7,7 @@ from pydantic import BaseModel, ValidationError
 
 from app.adapters.base import ModelAdapter
 from app.constants import PREDICT_ROUTE_PREFIX
-from app.errors import InvalidInputError
+from app.errors import ApiError, InvalidInputError, PredictionError
 from app.registry import ModelRegistry, get_registry
 
 router = APIRouter()
@@ -21,7 +21,7 @@ async def predict(
 ) -> dict[str, Any]:
     adapter = registry.get(model_name)
     request = _validate(adapter, payload)
-    response = adapter.predict(request)
+    response = _predict(adapter, request)
     return response.model_dump()
 
 
@@ -30,3 +30,12 @@ def _validate(adapter: ModelAdapter, payload: dict[str, Any]) -> BaseModel:
         return adapter.request_model.model_validate(payload)
     except ValidationError as exc:
         raise InvalidInputError(str(exc)) from exc
+
+
+def _predict(adapter: ModelAdapter, request: BaseModel) -> BaseModel:
+    try:
+        return adapter.predict(request)
+    except ApiError:
+        raise
+    except Exception as exc:
+        raise PredictionError(f"prediction failed for model: {adapter.name!r}") from exc

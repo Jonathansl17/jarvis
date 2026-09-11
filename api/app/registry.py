@@ -1,5 +1,6 @@
 """Loads every model bundle once and serves it by name."""
 
+import pickle
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +41,14 @@ class ModelRegistry:
     def _load_bundle(bundle_path: Path) -> dict[str, Any]:
         try:
             return joblib.load(bundle_path)
-        except (OSError, EOFError) as exc:
+        except (
+            OSError,
+            EOFError,
+            pickle.UnpicklingError,
+            ModuleNotFoundError,
+            AttributeError,
+            ValueError,
+        ) as exc:
             raise PredictionError(f"failed to load bundle: {bundle_path}") from exc
 
 

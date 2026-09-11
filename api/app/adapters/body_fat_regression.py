@@ -4,12 +4,12 @@ from typing import Any, ClassVar
 
 import pandas as pd
 
-from app.adapters.base import RangeWarning, check_ranges
+from app.adapters.base import check_ranges, to_warning
 from app.schemas.body_fat_regression import (
     BodyFatRegressionRequest,
     BodyFatRegressionResponse,
 )
-from app.schemas.common import PredictionMeta, Warning
+from app.schemas.common import PredictionMeta
 
 _CONSTANT_COLUMN = "const"
 
@@ -37,10 +37,5 @@ class BodyFatRegressionAdapter:
         warnings = check_ranges(raw, self._training_range)
         return BodyFatRegressionResponse(
             predicted_body_fat=predicted_body_fat,
-            meta=PredictionMeta(model=self.name, warnings=[self._to_warning(w) for w in warnings]),
+            meta=PredictionMeta(model=self.name, warnings=[to_warning(w) for w in warnings]),
         )
-
-    @staticmethod
-    def _to_warning(warning: RangeWarning) -> Warning:
-        message = f"{warning.value} is outside the training range [{warning.low}, {warning.high}]"
-        return Warning(field=warning.field, message=message)

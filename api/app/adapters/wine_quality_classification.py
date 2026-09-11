@@ -2,8 +2,7 @@
 
 from typing import Any, ClassVar
 
-import pandas as pd
-
+from app.adapters.base import frame_from_row, label_and_probability
 from app.constants import WINE_TYPE_ENCODING
 from app.schemas.common import PredictionMeta
 from app.schemas.wine_quality_classification import (
@@ -42,10 +41,8 @@ class WineQualityClassificationAdapter:
         self, request: WineQualityClassificationRequest
     ) -> WineQualityClassificationResponse:
         row = self._encode(request)
-        frame = pd.DataFrame([[row[f] for f in self._features]], columns=self._features)
-        label = str(self._model.predict(frame)[0])
-        classes = list(self._model.classes_)
-        probability = float(self._model.predict_proba(frame)[0, classes.index(label)])
+        frame = frame_from_row(row, self._features)
+        label, probability = label_and_probability(self._model, frame)
         return WineQualityClassificationResponse(
             label=label, probability=probability, meta=PredictionMeta(model=self.name)
         )

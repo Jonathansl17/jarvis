@@ -2,8 +2,7 @@
 
 from typing import Any, ClassVar
 
-import pandas as pd
-
+from app.adapters.base import frame_from_row
 from app.errors import InvalidInputError
 from app.schemas.common import PredictionMeta
 from app.schemas.flight_delay_regression import (
@@ -39,7 +38,7 @@ class FlightDelayRegressionAdapter:
             "Origin_freq": self._lookup(self._airport_encoding, request.origin, "origin airport"),
             "Dest_freq": self._lookup(self._dest_encoding, request.dest, "destination airport"),
         }
-        frame = pd.DataFrame([[row[f] for f in self._features]], columns=self._features)
+        frame = frame_from_row(row, self._features)
         predicted_delay_minutes = float(self._model.predict(frame)[0])
         return FlightDelayRegressionResponse(
             predicted_delay_minutes=predicted_delay_minutes,

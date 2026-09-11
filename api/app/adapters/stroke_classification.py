@@ -2,8 +2,7 @@
 
 from typing import Any, ClassVar
 
-import pandas as pd
-
+from app.adapters.base import frame_from_row
 from app.constants import (
     STROKE_GENDER_POSITIVE,
     STROKE_MARRIED_POSITIVE,
@@ -36,7 +35,7 @@ class StrokeClassificationAdapter:
 
     def predict(self, request: StrokeClassificationRequest) -> StrokeClassificationResponse:
         row = self._encode(request)
-        frame = pd.DataFrame([[row[f] for f in self._features]], columns=self._features)
+        frame = frame_from_row(row, self._features)
         probability = float(self._model.predict_proba(frame)[0, _POSITIVE_CLASS_INDEX])
         label = "stroke" if probability >= self._threshold else "no stroke"
         return StrokeClassificationResponse(
