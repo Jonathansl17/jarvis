@@ -28,8 +28,9 @@ class PenguinPose:
 
     `body` defaults to the static torso ellipse; idle's breathing frames
     override it with a scaled copy instead of retyping its coordinates.
-    `vertical_offset_px` shifts every shape in the frame (the speaking
-    bounce, the post-reply hop) without retyping coordinates either.
+    `vertical_offset_px`/`horizontal_offset_px` shift every shape in the
+    frame (the speaking bounce, the post-reply hop, fear's idle jitter)
+    without retyping coordinates either.
     """
 
     duration_ms: int
@@ -40,3 +41,4 @@ class PenguinPose:
     extra: tuple[Shape, ...] = ()
     body: Shape = BODY
     vertical_offset_px: int = 0
+    horizontal_offset_px: int = 0

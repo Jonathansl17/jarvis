@@ -1,91 +1,119 @@
-"""Emotion -> eyes/beak/eyebrow/flipper/cheek overrides, from §9's per-emotion
-table, plus the webcam-emotion-to-avatar-reaction mirroring policy (§7's
-"Mirroring policy" box).
+"""Emotion -> full-body pose overrides (eyes/beak/eyebrows/flippers/cheeks/
+belly/body offset-scale/extra decorations), from the expression table.
 
-`map_emotion_to_avatar()` is the one function that may branch on emotion
-strings for this mapping — nothing else special-cases it, per the design
-spec's explicit instruction. Per-emotion shape constants live in
-`expression_shapes.py`, split out to stay within the file-size limit.
+The mirroring policy (which emotion the avatar displays, and which trigger
+its post-reply hop) lives in `mirroring.py`; this module re-exports
+`map_emotion_to_avatar`/`HOP_TRIGGER_EMOTIONS` so callers only need one
+import. Per-emotion shape constants live in `expression_shapes.py`/
+`eyebrows.py`/`decorations.py`, and per-emotion body pose data in
+`emotion_poses.py`, split out to stay within the file-size limit.
 """
 
 from dataclasses import dataclass
 
 from app.emotion.protocol import Emotion
+from app.ui.avatar import decorations, eyebrows
 from app.ui.avatar import expression_shapes as shapes
-from app.ui.avatar.shapes import Shape, beak_open, cheek_shapes
+from app.ui.avatar.emotion_poses import BODY_POSES, BodyPose
+from app.ui.avatar.mirroring import HOP_TRIGGER_EMOTIONS, map_emotion_to_avatar
+from app.ui.avatar.shapes import (
+    AVATAR_BELLY,
+    AVATAR_BELLY_SAD,
+    AVATAR_CHEEK,
+    AVATAR_CHEEK_ANGRY,
+    AVATAR_CHEEK_DISGUST,
+    FLIPPERS_RAISED,
+    Shape,
+    beak_open,
+    cheek_shapes,
+)
+
+__all__ = [
+    "Expression",
+    "EXPRESSIONS",
+    "HOP_TRIGGER_EMOTIONS",
+    "map_emotion_to_avatar",
+    "resolve_expression",
+    "cheeks_for",
+]
 
 _CHEEK_OPACITY_DEFAULT = 102  # 40% of 255, the design spec's cheek token alpha.
 _CHEEK_OPACITY_HAPPY = 255
+_CHEEK_OPACITY_VIVID = 220
 _CHEEK_OPACITY_SUPPRESSED = 0
-
-# Detected emotion -> what the avatar shows; angry/disgust never reflect
-# back at the user, per §7's mirroring policy.
-_AVATAR_EMOTION_FOR: dict[Emotion, Emotion] = {
-    Emotion.HAPPY: Emotion.HAPPY,
-    Emotion.SAD: Emotion.SAD,
-    Emotion.SURPRISE: Emotion.SURPRISE,
-    Emotion.FEAR: Emotion.SURPRISE,
-    Emotion.NEUTRAL: Emotion.NEUTRAL,
-    Emotion.ANGRY: Emotion.NEUTRAL,
-    Emotion.DISGUST: Emotion.NEUTRAL,
-}
-
-
-def map_emotion_to_avatar(emotion: Emotion) -> Emotion:
-    """Return the emotion the avatar should display for a detected `emotion`."""
-    return _AVATAR_EMOTION_FOR[emotion]
-
-
-# Emotions that trigger the avatar's one-time post-reply hop; a subset of
-# the mirroring table above, not a policy of its own.
-HOP_TRIGGER_EMOTIONS = frozenset({Emotion.HAPPY, Emotion.SURPRISE})
+_CHEEK_SCALE_HAPPY = 1.4
 
 
 @dataclass(frozen=True)
 class Expression:
-    """Overrides a pose's default eyes/beak/eyebrows/flippers/cheeks."""
+    """Overrides a pose's default eyes/beak/eyebrows/flippers/cheeks/belly,
+    plus a whole-body offset/scale and any extra decorations."""
 
     eyes: tuple[Shape, ...] | None = None
     eyebrows: tuple[Shape, ...] = ()
     beak: tuple[Shape, ...] | None = None
     flippers: tuple[Shape, Shape] | None = None
     cheek_opacity: int = _CHEEK_OPACITY_DEFAULT
+    cheek_fill: str = AVATAR_CHEEK
+    cheek_scale: float = 1.0
+    belly_fill: str = AVATAR_BELLY
+    body: BodyPose = BodyPose()
+    extra: tuple[Shape, ...] = ()
 
 
 EXPRESSIONS: dict[Emotion, Expression] = {
-    Emotion.HAPPY: Expression(beak=shapes.HAPPY_BEAK, cheek_opacity=_CHEEK_OPACITY_HAPPY),
+    Emotion.HAPPY: Expression(
+        eyes=shapes.HAPPY_EYES,
+        beak=shapes.HAPPY_BEAK,
+        flippers=FLIPPERS_RAISED,
+        cheek_opacity=_CHEEK_OPACITY_HAPPY,
+        cheek_scale=_CHEEK_SCALE_HAPPY,
+        body=BODY_POSES[Emotion.HAPPY],
+    ),
     Emotion.SAD: Expression(
         eyes=shapes.SAD_EYES,
-        eyebrows=shapes.eyebrows(((85, 57), (113, 51)), ((147, 51), (175, 57))),
+        eyebrows=eyebrows.SAD_EYEBROWS,
         beak=shapes.SAD_BEAK,
         flippers=shapes.FLIPPERS_DROOPING,
+        belly_fill=AVATAR_BELLY_SAD,
+        body=BODY_POSES[Emotion.SAD],
+        extra=decorations.TEAR_DROP,
     ),
     Emotion.ANGRY: Expression(
         eyes=shapes.ANGRY_EYES,
-        eyebrows=shapes.eyebrows(((85, 60), (113, 50)), ((147, 50), (175, 60))),
+        eyebrows=eyebrows.ANGRY_EYEBROWS,
         beak=shapes.ANGRY_BEAK,
         flippers=shapes.FLIPPERS_ANGRY,
-        cheek_opacity=_CHEEK_OPACITY_SUPPRESSED,
+        cheek_opacity=_CHEEK_OPACITY_VIVID,
+        cheek_fill=AVATAR_CHEEK_ANGRY,
+        body=BODY_POSES[Emotion.ANGRY],
     ),
     Emotion.SURPRISE: Expression(
         eyes=shapes.SURPRISE_EYES,
-        eyebrows=shapes.eyebrows(((85, 53), (113, 53)), ((147, 53), (175, 53))),
+        eyebrows=eyebrows.SURPRISE_EYEBROWS,
         beak=beak_open(14),
         flippers=shapes.FLIPPERS_OUT,
+        body=BODY_POSES[Emotion.SURPRISE],
+        extra=decorations.EXCLAMATION_MARK,
     ),
     Emotion.FEAR: Expression(
         eyes=shapes.FEAR_EYES,
-        eyebrows=shapes.eyebrows(((85, 57), (113, 45)), ((147, 45), (175, 57))),
+        eyebrows=eyebrows.FEAR_EYEBROWS,
         beak=shapes.FEAR_BEAK,
-        flippers=shapes.FLIPPERS_TIGHT,
+        flippers=shapes.FLIPPERS_COVER_FACE,
         cheek_opacity=_CHEEK_OPACITY_SUPPRESSED,
+        body=BODY_POSES[Emotion.FEAR],
+        extra=decorations.SWEAT_DROP,
     ),
     Emotion.DISGUST: Expression(
         eyes=shapes.DISGUST_EYES,
-        eyebrows=shapes.eyebrow(((147, 55), (175, 70))),
+        eyebrows=eyebrows.DISGUST_EYEBROWS,
         beak=shapes.DISGUST_BEAK,
         flippers=shapes.FLIPPERS_DISGUST,
-        cheek_opacity=_CHEEK_OPACITY_SUPPRESSED,
+        cheek_opacity=_CHEEK_OPACITY_VIVID,
+        cheek_fill=AVATAR_CHEEK_DISGUST,
+        body=BODY_POSES[Emotion.DISGUST],
+        extra=decorations.TONGUE,
     ),
     Emotion.NEUTRAL: Expression(),
 }
@@ -98,5 +126,6 @@ def resolve_expression(emotion: Emotion) -> Expression:
 
 def cheeks_for(expression: Expression | None) -> tuple[Shape, ...]:
     """Return the cheek shapes an expression asks for (default if `None`)."""
-    opacity = expression.cheek_opacity if expression is not None else _CHEEK_OPACITY_DEFAULT
-    return cheek_shapes(opacity)
+    if expression is None:
+        return cheek_shapes(_CHEEK_OPACITY_DEFAULT)
+    return cheek_shapes(expression.cheek_opacity, expression.cheek_fill, expression.cheek_scale)

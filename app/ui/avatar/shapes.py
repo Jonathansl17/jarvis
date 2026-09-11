@@ -11,9 +11,12 @@ from dataclasses import dataclass
 
 AVATAR_BODY = "#1C2530"
 AVATAR_BELLY = "#F4F6F8"
+AVATAR_BELLY_SAD = "#E1E4E8"
 AVATAR_BEAK_FOOT = "#FF9F1C"
 AVATAR_BEAK_ANGRY = "#E07A00"
 AVATAR_CHEEK = "#FF9E9E"
+AVATAR_CHEEK_ANGRY = "#FF4D4F"
+AVATAR_CHEEK_DISGUST = "#B7D69A"
 ACCENT_PRIMARY = "#2DE2C9"
 
 CANVAS_SIZE_PX = 260
@@ -44,20 +47,17 @@ class Line:
 Shape = Ellipse | Polygon | Line
 
 
-def cheek_shapes(opacity: int) -> tuple[Shape, ...]:
-    """Return the two cheek ellipses at `opacity` (0-255), per §7 item 7."""
+def cheek_shapes(opacity: int, fill: str = AVATAR_CHEEK, scale: float = 1.0) -> tuple[Shape, ...]:
+    """Return the two cheek ellipses at `opacity` (0-255), `fill`-colored and
+    scaled by `scale` (happy's cheeks are larger than the other emotions').
+    """
     if opacity <= 0:
         return ()
-    fill = f"{AVATAR_CHEEK}{opacity:02x}"
+    radius = round(_CHEEK_RADIUS_PX * scale)
+    color = f"{fill}{opacity:02x}"
     return (
-        Ellipse(
-            (93 - _CHEEK_RADIUS_PX, 100 - _CHEEK_RADIUS_PX, 93 + _CHEEK_RADIUS_PX, 100 + _CHEEK_RADIUS_PX),
-            fill=fill,
-        ),
-        Ellipse(
-            (167 - _CHEEK_RADIUS_PX, 100 - _CHEEK_RADIUS_PX, 167 + _CHEEK_RADIUS_PX, 100 + _CHEEK_RADIUS_PX),
-            fill=fill,
-        ),
+        Ellipse((93 - radius, 100 - radius, 93 + radius, 100 + radius), fill=color),
+        Ellipse((167 - radius, 100 - radius, 167 + radius, 100 + radius), fill=color),
     )
 
 
@@ -70,6 +70,11 @@ FEET = (
 BODY = Ellipse((40, 55, 220, 250), fill=AVATAR_BODY)
 HEAD = Ellipse((60, 15, 200, 140), fill=AVATAR_BODY)
 BELLY = Ellipse((80, 105, 180, 240), fill=AVATAR_BELLY)
+
+
+def belly_shape(fill: str = AVATAR_BELLY) -> Shape:
+    """Return the belly ellipse tinted `fill` (sad's slightly grey belly)."""
+    return Ellipse(BELLY.box, fill=fill)
 
 FLIPPERS_DEFAULT = (
     Polygon(((45, 140), (18, 175), (30, 215), (55, 190)), fill=AVATAR_BODY),
