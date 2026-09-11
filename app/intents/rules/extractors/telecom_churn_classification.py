@@ -18,8 +18,8 @@ _PAYMENT_ALIASES = {
     "Electronic check": ("cheque electronico", "cheque electrónico"),
     "Mailed check": ("cheque por correo",),
 }
-_SENIOR_TRUE = ("adulto mayor", "tercera edad")
-_SENIOR_FALSE = ("joven", "no es adulto mayor")
+_SENIOR_TRUE = ("adulto mayor", "adulta mayor", "tercera edad", "jubilado", "jubilada", "pensionado", "pensionada")
+_SENIOR_FALSE = ("joven", "no es adulto mayor", "no es adulta mayor")
 _TENURE_MONTH_KEYWORDS = ("meses de antiguedad", "meses como cliente", "antiguedad", "antigüedad", "meses")
 _TENURE_YEAR_KEYWORDS = ("años de antiguedad", "años como cliente", "años", "anos")
 _MONTHLY_CHARGE_KEYWORDS = ("cargo mensual", "factura mensual", "mensualidad", "al mes", "por mes")
