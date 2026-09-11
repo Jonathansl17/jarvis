@@ -45,6 +45,10 @@ class JarvisActions:
             self.input_row.set_mic_recording(True)
             self.status_bar.set_mic_state(MIC_RECORDING)
 
+    def on_text_copied(self) -> None:
+        """Confirm in the status strip that a chat bubble was copied."""
+        self.status_bar.set_notice(strings.COPIED_NOTICE)
+
     def on_camera_toggle(self) -> None:
         """Turn webcam emotion sampling on or off (Ctrl+E or the card button, §15)."""
         self._camera_enabled = not self._camera_enabled

@@ -18,6 +18,7 @@ from app.ui.theme import Fonts
 
 _STRIP_HEIGHT_PX = 32
 _DOT_SIZE_PX = 8
+_NOTICE_DURATION_MS = 2500
 _SEGMENT_PADDING_PX = 10
 _DOT_PADDING_PX = 6
 
@@ -96,7 +97,12 @@ class StatusBar(ctk.CTkFrame):
 
     def set_error(self, detail: str) -> None:
         """Show a background failure as a short red line, replacing any prior one."""
-        self._error_label.configure(text=detail)
+        self._error_label.configure(text=detail, text_color=theme.COLOR_DANGER)
+
+    def set_notice(self, detail: str) -> None:
+        """Show a short informational line where errors go, cleared after a moment."""
+        self._error_label.configure(text=detail, text_color=theme.COLOR_TEXT_MUTED)
+        self.after(_NOTICE_DURATION_MS, lambda: self._error_label.configure(text=""))
 
     def _build_segment(self, master: ctk.CTkBaseClass, column: int, label: str) -> tuple[ctk.CTkFrame, ctk.CTkLabel]:
         """Build one `label ● state` segment and return its dot and state label."""

@@ -72,7 +72,10 @@ class JarvisApp(JarvisActions, JarvisDispatchHandlers):
         """Lay out the window's widgets, bind global keys, and wire the close handler."""
         fonts = theme.apply_theme()
         callbacks = WindowCallbacks(
-            on_send=self.on_send, on_mic_toggle=self.on_mic_toggle, on_camera_toggle=self.on_camera_toggle
+            on_send=self.on_send,
+            on_mic_toggle=self.on_mic_toggle,
+            on_camera_toggle=self.on_camera_toggle,
+            on_text_copied=self.on_text_copied,
         )
         widgets = layout.build_window(self.root, fonts, startup, callbacks)
         self.avatar_pane = widgets.avatar_pane

@@ -21,6 +21,7 @@ class WindowCallbacks:
     on_send: Callable[[], None]
     on_mic_toggle: Callable[[], None]
     on_camera_toggle: Callable[[], None]
+    on_text_copied: Callable[[], None]
 
 
 @dataclass(frozen=True)

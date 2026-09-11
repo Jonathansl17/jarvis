@@ -125,7 +125,7 @@ def _build_right_column(
 
     conversation_card = make_card(column, fonts, strings.CARD_TITLE_CONVERSATION)
     conversation_card.grid(row=0, column=0, sticky="nsew")
-    conversation_view = ConversationView(conversation_card, fonts)
+    conversation_view = ConversationView(conversation_card, fonts, on_copied=callbacks.on_text_copied)
     conversation_view.pack(fill="both", expand=True)
 
     input_row = InputRow(column, fonts, on_send=callbacks.on_send, on_mic_toggle=callbacks.on_mic_toggle)
