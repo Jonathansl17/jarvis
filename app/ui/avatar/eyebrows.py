@@ -2,41 +2,17 @@
 of `expression_shapes.py` since eyebrows are a distinct face part with their
 own per-emotion geometry table.
 
-Surprise and fear's eyebrows get a light patch drawn behind them first,
-since they would otherwise be an `AVATAR_BODY`-colored line drawn directly
-on the `AVATAR_BODY`-colored head, and disappear. Sad, angry, and disgust
-are drawn as plain thin strokes instead — the patch technique, sized to the
-line's own bounding box, rendered as an oversized slab behind their
-shallower, wider-set brows; a thin stroke reads fine against the dark head
-without one.
+Every eyebrow is a plain thin stroke, no patch behind it — an earlier
+patch-behind-line technique (a light ellipse sized to the line's own
+bounding box) rendered as an oversized slab that read as a second pair of
+eyes; a thin stroke reads fine against the dark head on its own.
 """
 
-from app.ui.avatar.shapes import AVATAR_BELLY, AVATAR_BODY, Ellipse, Line, Shape
+from app.ui.avatar.shapes import Line, Shape
 
-_WIDTH_PX = 4
 _WIDTH_THIN_PX = 4
-_PATCH_MARGIN_PX = 4
 AVATAR_EYEBROW_LIGHT = "#AEB6C2"
 AVATAR_EYEBROW_DARK = "#4A5568"
-
-
-def _brow(points: tuple[tuple[int, int], ...], width: int) -> tuple[Shape, Shape]:
-    """One eyebrow: a light patch behind an `AVATAR_BODY` line."""
-    xs, ys = [p[0] for p in points], [p[1] for p in points]
-    x0, x1 = min(xs) - _PATCH_MARGIN_PX, max(xs) + _PATCH_MARGIN_PX
-    y0, y1 = min(ys) - _PATCH_MARGIN_PX, max(ys) + _PATCH_MARGIN_PX
-    patch = Ellipse((x0, y0, x1, y1), fill=AVATAR_BELLY)
-    return (patch, Line(points, fill=AVATAR_BODY, width=width))
-
-
-def _pair(left: tuple[tuple[int, int], ...], right: tuple[tuple[int, int], ...], width: int) -> tuple[Shape, ...]:
-    """Build a symmetric pair of eyebrows at `width` px."""
-    return _brow(left, width) + _brow(right, width)
-
-
-def _single(points: tuple[tuple[int, int], ...], width: int) -> tuple[Shape, ...]:
-    """Build one eyebrow (disgust only raises one side)."""
-    return _brow(points, width)
 
 
 def _thin_pair(
@@ -67,8 +43,12 @@ ANGRY_EYEBROWS = _thin_pair(((85, 64), (113, 52)), ((147, 52), (175, 64)), AVATA
 # The idle loop's last frame: a sharper inward twitch.
 ANGRY_EYEBROWS_TWITCH = _thin_pair(((85, 66), (113, 48)), ((147, 48), (175, 66)), AVATAR_EYEBROW_DARK)
 
-# Raised high and flat, per the surprise row.
-SURPRISE_EYEBROWS = _pair(((85, 42), (113, 42)), ((147, 42), (175, 42)), _WIDTH_PX)
+# Thin, light grey, raised high in a shallow arc (a 3-point line, like
+# happy's smile caret) — not the old flat patch-backed slab, which read as
+# a second pair of eyes above the real ones.
+SURPRISE_EYEBROWS = _thin_pair(
+    ((84, 40), (99, 30), (114, 40)), ((146, 40), (161, 30), (176, 40)), AVATAR_EYEBROW_LIGHT
+)
 
 # Thin and worried: raised, with the inner corners higher than the outer
 # ones, per the fear row.

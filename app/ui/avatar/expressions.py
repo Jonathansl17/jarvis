@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from app.emotion.protocol import Emotion
 from app.ui.avatar import decorations, eyebrows
 from app.ui.avatar import expression_shapes as shapes
+from app.ui.avatar.beak_shapes import beak_round_open
 from app.ui.avatar.emotion_poses import BODY_POSES, BodyPose
 from app.ui.avatar.mirroring import HOP_TRIGGER_EMOTIONS, map_emotion_to_avatar
 from app.ui.avatar.pose_types import CheekPulse
@@ -25,9 +26,11 @@ from app.ui.avatar.shapes import (
     AVATAR_CHEEK_DISGUST,
     FLIPPERS_RAISED,
     Shape,
-    beak_open,
     cheek_shapes,
 )
+
+_SURPRISE_BEAK_WIDTH_PX = 22
+_SURPRISE_BEAK_HEIGHT_PX = 26
 
 __all__ = [
     "Expression",
@@ -92,7 +95,7 @@ EXPRESSIONS: dict[Emotion, Expression] = {
     Emotion.SURPRISE: Expression(
         eyes=shapes.SURPRISE_EYES,
         eyebrows=eyebrows.SURPRISE_EYEBROWS,
-        beak=beak_open(14),
+        beak=beak_round_open(_SURPRISE_BEAK_WIDTH_PX, _SURPRISE_BEAK_HEIGHT_PX),
         flippers=shapes.FLIPPERS_OUT,
         body=BODY_POSES[Emotion.SURPRISE],
         extra=decorations.EXCLAMATION_MARK,

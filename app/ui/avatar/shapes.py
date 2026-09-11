@@ -104,20 +104,9 @@ EYES_THINKING = (
 
 BEAK_CLOSED = (Polygon(((116, 100), (144, 100), (130, 118)), fill=AVATAR_BEAK_FOOT),)
 
-
-def beak_open(gap_px: float, fill: str = AVATAR_BEAK_FOOT) -> tuple[Shape, ...]:
-    """Two trapezoids straddling a `gap_px`-tall opening, per §7 item 10."""
-    half_gap = gap_px / 2
-    mid_y = 109
-    top_y, bottom_y = mid_y - half_gap, mid_y + half_gap
-    return (
-        Polygon(((116, 100), (144, 100), (139, top_y), (121, top_y)), fill=fill),
-        Polygon(((121, bottom_y), (139, bottom_y), (130, 118)), fill=fill),
-    )
-
-
-BEAK_HALF_OPEN = beak_open(6)
-BEAK_OPEN = beak_open(14)
+# The round "open beak" builder (`beak_round_open`) and its two open sizes
+# (`BEAK_HALF_OPEN`/`BEAK_OPEN`) live in `beak_shapes.py`, split out to stay
+# within this module's file-size limit.
 
 _DOT_ROW_Y = 175
 _DOT_RADIUS = 4

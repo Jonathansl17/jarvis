@@ -3,18 +3,10 @@ plain looping sequence (unlike idle, which splices timed events into its
 loop; see `idle_frames.py`).
 """
 
+from app.ui.avatar.beak_shapes import BEAK_HALF_OPEN, BEAK_OPEN
 from app.ui.avatar.pose_shapes import EYES_LOOK_UP_LEFT, EYES_LOOK_UP_RIGHT, EYES_WIDE
 from app.ui.avatar.pose_types import PenguinPose
-from app.ui.avatar.shapes import (
-    BEAK_CLOSED,
-    BEAK_HALF_OPEN,
-    BEAK_OPEN,
-    EYES_OPEN,
-    FLIPPERS_DEFAULT,
-    FLIPPERS_RAISED,
-    dot_row,
-    glow_ring,
-)
+from app.ui.avatar.shapes import BEAK_CLOSED, EYES_OPEN, FLIPPERS_DEFAULT, FLIPPERS_RAISED, dot_row, glow_ring
 
 # Glow ring alpha 40%->80%->40% over a 1.2s pulse, in 6 equal 200ms steps.
 _LISTENING_FRAME_MS = 200
