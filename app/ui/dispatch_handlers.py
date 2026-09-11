@@ -76,6 +76,8 @@ class JarvisDispatchHandlers:
         exactly. No face means no emotion: the avatar and the tone go back
         to neutral instead of keeping the last reading.
         """
+        if not self._camera_enabled:
+            return
         self.camera_preview.update_sample(message.sample)
         sample = message.sample
         if sample is None:
