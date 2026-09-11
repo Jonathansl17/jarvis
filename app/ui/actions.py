@@ -38,6 +38,7 @@ class JarvisActions:
             self.input_row.set_input_enabled(False)
             self._bridge.submit(self._finish_recording())
         else:
+            self._player.stop()
             self._recorder.start()
             self._recording = True
             self.avatar_pane.set_state(AvatarState.LISTENING)

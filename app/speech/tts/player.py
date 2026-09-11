@@ -20,3 +20,7 @@ class AudioPlayer:
         except sd.PortAudioError as exc:
             raise SynthesisError("Failed to play back synthesized audio") from exc
         return duration_seconds
+
+    def stop(self) -> None:
+        """Cut playback short, e.g. when the user starts talking over the assistant."""
+        sd.stop()
