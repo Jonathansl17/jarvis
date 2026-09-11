@@ -2,7 +2,8 @@
 
 Group project for the Artificial Intelligence course (ITCR, San Carlos).
 Ten machine learning models built with CRISP-DM, a REST API that serves
-them, and a user-facing app (in progress).
+them, and JarvisTEC, a desktop voice assistant that runs them from spoken
+Spanish while reading the user's emotion from the webcam.
 
 ## Repository layout
 
@@ -10,7 +11,7 @@ them, and a user-facing app (in progress).
 notebooks/   one folder per model, each with its executed CRISP-DM notebook
 models/      one .joblib bundle per model, written by the notebooks, read by the API
 api/         FastAPI service, one endpoint per model
-app/         user-facing application (placeholder)
+app/         JarvisTEC desktop assistant (CustomTkinter, whisper, Piper, OpenCV)
 ```
 
 | # | Notebook | Technique | Target |
@@ -122,6 +123,23 @@ Classifiers answer with `label`, `probability` and the `threshold` applied.
 Regressions answer with the predicted value in the units of the notebook
 (lakhs of rupees, percent of body fat, dollars, minutes). Bitcoin answers with
 a list of `{date, price, lower, upper}`.
+
+## App
+
+```bash
+source env/bin/activate
+pip install -r app/requirements.txt
+cp app/.env.example app/.env   # optional GEMINI_API_KEY
+python -m app                  # with the API running on port 8000
+```
+
+Speak or type a request such as "JarvisTEC, ¿cuánto vale un carro diesel del
+2015...?" and the assistant picks the model, asks for anything missing,
+calls the API and answers in text and voice. The webcam feed shows the
+detected face and emotion, which changes the tone of the reply and the
+penguin's expression. Details, keys and configuration in `app/README.md`,
+example sentences per model in `app/prompts.txt`. Works on Windows with the
+same steps (`py -m venv env`, `env\Scripts\activate`).
 
 ## Authors
 
