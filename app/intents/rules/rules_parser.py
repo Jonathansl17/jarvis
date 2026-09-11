@@ -26,9 +26,21 @@ class RulesParser:
 
     @staticmethod
     def _match_model(text: str) -> str:
-        """Return the first model whose trigger keyword appears in `text`."""
+        """Return the model whose trigger keywords match `text` best.
+
+        The score is the length of the longest matched keyword, then the number
+        of matches, so a specific phrase outweighs a generic word shared with
+        another model.
+        """
         lowered = text.lower()
-        for model_name, keywords in MODEL_KEYWORDS.items():
-            if any(keyword in lowered for keyword in keywords):
-                return model_name
-        raise IntentParsingError(f"no known model matched in: {text!r}")
+        scores = {
+            model_name: (
+                max((len(keyword) for keyword in keywords if keyword in lowered), default=0),
+                sum(keyword in lowered for keyword in keywords),
+            )
+            for model_name, keywords in MODEL_KEYWORDS.items()
+        }
+        best_model, best_score = max(scores.items(), key=lambda item: item[1])
+        if best_score[0] == 0:
+            raise IntentParsingError(f"no known model matched in: {text!r}")
+        return best_model

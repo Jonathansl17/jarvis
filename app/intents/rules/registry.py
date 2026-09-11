@@ -41,7 +41,7 @@ MODEL_KEYWORDS: dict[str, tuple[str, ...]] = {
         "precio del carro", "cuanto vale", "cuánto vale", "valor de venta", "revender",
     ),
     "body_fat_regression": (
-        "grasa corporal", "porcentaje de grasa", "grasa", "body fat", "masa corporal", "masa grasa",
+        "grasa corporal", "porcentaje de grasa", "grasa", "body fat", "masa grasa",
         "cuanta grasa", "cuánta grasa", "medidas corporales", "composicion corporal", "composición corporal",
     ),
     "stroke_classification": (
@@ -54,7 +54,7 @@ MODEL_KEYWORDS: dict[str, tuple[str, ...]] = {
     ),
     "cirrhosis_type_classification": (
         "cirrosis", "cirrosis hepatica", "cirrosis hepática", "etapa de cirrosis", "estadio de cirrosis",
-        "higado", "hígado", "biliar", "colangitis", "bilirrubina", "albumina", "albúmina",
+        "higado", "hígado", "biliar", "colangitis",
     ),
     "wine_quality_classification": (
         "vino", "vinos", "calidad del vino", "vino tinto", "vino blanco", "cata", "bodega", "uva",
@@ -74,6 +74,7 @@ MODEL_KEYWORDS: dict[str, tuple[str, ...]] = {
         "se cambie de compañia", "se cambie de compañía", "cancelar el servicio", "dar de baja", "darse de baja",
         "telefonia", "telefonía", "telecomunicaciones", "operador", "operadora", "plan de celular",
         "plan de internet", "fuga de clientes", "perder el cliente", "cliente de telecom",
+        "cliente", "fibra optica", "fibra óptica", "contrato mes a mes", "se va a ir",
     ),
     "bitcoin_price_regression": (
         "bitcoin", "btc", "cripto", "criptomoneda", "criptomonedas", "crypto", "precio del bitcoin",
