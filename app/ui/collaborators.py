@@ -52,5 +52,6 @@ class RuntimeOptions:
     stt_engine_name: str
     camera_enabled: bool
     tts_enabled: bool
+    preview_interval_seconds: float
     emotion_interval_seconds: float
     startup_notices: Sequence[str] = ()

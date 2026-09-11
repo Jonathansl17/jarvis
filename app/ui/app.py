@@ -60,6 +60,7 @@ class JarvisApp(JarvisActions, App):
         self._stt_engine_name = options.stt_engine_name
         self._camera_enabled = options.camera_enabled
         self._tts_enabled = options.tts_enabled
+        self._preview_interval_seconds = options.preview_interval_seconds
         self._emotion_interval_seconds = options.emotion_interval_seconds
         self._startup_notices = options.startup_notices
         self._recording = False

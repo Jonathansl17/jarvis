@@ -53,7 +53,7 @@ class JarvisActions:
         else:
             self.workers.cancel_group(self, _EMOTION_WORKER_GROUP)
             self._camera.close()
-            self.query_one(StatusBar).set_emotion(None, None)
+            self.query_one(StatusBar).set_camera_disabled()
             self.query_one(CameraPreview).show_disabled()
 
     def on_input_submitted(self, message: Input.Submitted) -> None:
@@ -116,7 +116,11 @@ class JarvisActions:
         """(Re)start the webcam sampling loop as a background worker."""
         self.run_worker(
             sample_emotion_forever(
-                self._camera, self._emotion_detector, self._emotion_interval_seconds, self._on_emotion
+                self._camera,
+                self._emotion_detector,
+                self._preview_interval_seconds,
+                self._emotion_interval_seconds,
+                self._on_emotion,
             ),
             group=_EMOTION_WORKER_GROUP,
         )
@@ -129,6 +133,7 @@ class JarvisActions:
         """Refresh the preview and, above the confidence cutoff, the avatar."""
         self.query_one(CameraPreview).update_sample(message.sample)
         if message.sample is None or message.sample.reading is None:
+            self.query_one(StatusBar).set_no_face()
             return
         emotion, confidence = message.sample.reading
         self.query_one(StatusBar).set_emotion(emotion.value, confidence)

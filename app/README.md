@@ -54,6 +54,14 @@ names:
   focus between the input line and the conversation log for scrollback.
 - The avatar, status bar, colors, and timings follow the visual spec
   verbatim (`ui/frames.py` for frame art, `ui/styles.tcss` for tokens).
+- The camera preview always shows the full webcam frame, mirrored, with the
+  detected face boxed live. It grabs a preview frame every
+  `PREVIEW_INTERVAL_SECONDS` but only re-runs face detection and emotion
+  classification every `EMOTION_SAMPLE_INTERVAL_SECONDS`, reusing the last
+  result in between so the box stays drawn without re-running the model on
+  every frame. Below the preview, one line names the detected emotion in
+  Spanish with its confidence (e.g. "feliz 82 %"), or "sin rostro" when the
+  camera is on but no face is found.
 
 ## Adding an eleventh model
 

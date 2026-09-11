@@ -3,6 +3,7 @@
 from textual.widgets import Static
 
 from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
+from app.emotion.spanish_labels import NO_FACE_TEXT
 from app.ui.key_bindings import KEY_BINDINGS
 
 FIELD_SEPARATOR = "  │  "
@@ -49,14 +50,22 @@ class StatusBar(Static):
         self._mic_state = state
         self._refresh_display()
 
-    def set_emotion(self, label: str | None, confidence: float | None) -> None:
+    def set_emotion(self, label: str, confidence: float) -> None:
         """Update the EMO field, showing `incierto` below the confidence cutoff."""
-        if label is None:
-            self._emo_field = _EMO_FIELD_NO_CONFIDENCE_TEMPLATE.format(label=EMO_DISABLED)
-        elif confidence is not None and confidence < EMOTION_LOW_CONFIDENCE_THRESHOLD:
+        if confidence < EMOTION_LOW_CONFIDENCE_THRESHOLD:
             self._emo_field = _EMO_FIELD_NO_CONFIDENCE_TEMPLATE.format(label=EMO_UNCERTAIN)
         else:
             self._emo_field = _EMO_FIELD_TEMPLATE.format(label=label, confidence=confidence)
+        self._refresh_display()
+
+    def set_no_face(self) -> None:
+        """Show that the camera is on but no face is currently detected."""
+        self._emo_field = _EMO_FIELD_NO_CONFIDENCE_TEMPLATE.format(label=NO_FACE_TEXT)
+        self._refresh_display()
+
+    def set_camera_disabled(self) -> None:
+        """Show that the webcam emotion sampler is turned off."""
+        self._emo_field = _EMO_FIELD_NO_CONFIDENCE_TEMPLATE.format(label=EMO_DISABLED)
         self._refresh_display()
 
     def set_api_state(self, state: str) -> None:

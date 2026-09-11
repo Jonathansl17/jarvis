@@ -40,13 +40,20 @@ FACE_CASCADE_FILENAME = "haarcascade_frontalface_alt.xml"
 # Order fixed to match the ONNX model's softmax output; never reorder.
 EMOTION_LABELS = ("angry", "disgust", "fear", "happy", "sad", "surprise", "neutral")
 EMOTION_INPUT_SIZE_PX = 48
-FACE_CASCADE_SCALE_FACTOR = 1.32
-FACE_CASCADE_MIN_NEIGHBORS = 5
+FACE_SCALE_FACTOR = 1.1
+FACE_MIN_NEIGHBORS = 4
+# Rejects tiny false positives (screen glare, texture patches); in pixels,
+# before the frame is scaled to the preview grid.
+FACE_MIN_SIZE = (60, 60)
 CAMERA_INDEX = 0
 # A freshly opened USB webcam's first frames are near-black while its auto
 # exposure settles; discarding a few on open avoids reporting "no face"
 # during that warm-up window.
 CAMERA_WARMUP_FRAMES = 10
+# How often the camera preview grabs a new frame; the emotion detector runs
+# far less often (`EMOTION_SAMPLE_INTERVAL_SECONDS`), reusing its last
+# result on the frames in between so the face box stays drawn live.
+PREVIEW_INTERVAL_SECONDS = 0.25
 EMOTION_SAMPLE_INTERVAL_SECONDS = 2.0
 # Below this softmax confidence, an emotion reading is reported as uncertain
 # rather than shown as a specific label, both in the status bar and the
