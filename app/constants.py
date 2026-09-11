@@ -55,6 +55,9 @@ CAMERA_WARMUP_FRAMES = 10
 # reusing its last result on the frames in between so the face box stays
 # drawn live.
 CAMERA_FRAME_INTERVAL_SECONDS = 1 / 15
+# Threads each ONNX session (speech and emotion) may use, so inference never
+# starves the interface thread on a shared CPU.
+ONNX_INTRA_OP_THREADS = 2
 EMOTION_SAMPLE_INTERVAL_SECONDS = 2.0
 # The winning emotion always drives the avatar and the tone: with seven
 # classes a webcam reading rarely exceeds 50 percent, so the confidence is

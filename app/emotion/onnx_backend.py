@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 import onnxruntime as ort
 
-from app.constants import EMOTION_INPUT_SIZE_PX
+from app.constants import ONNX_INTRA_OP_THREADS, EMOTION_INPUT_SIZE_PX
 from app.emotion.face_locator import BoundingBox, FaceLocator
 from app.emotion.protocol import Detection, Emotion
 from app.errors import EmotionDetectionError
@@ -21,8 +21,10 @@ class OnnxEmotionDetector:
     def __init__(self, model_path: Path, face_locator: FaceLocator) -> None:
         self._face_locator = face_locator
         try:
+            options = ort.SessionOptions()
+            options.intra_op_num_threads = ONNX_INTRA_OP_THREADS
             self._session = ort.InferenceSession(
-                str(model_path), providers=["CPUExecutionProvider"]
+                str(model_path), sess_options=options, providers=["CPUExecutionProvider"]
             )
         except Exception as exc:  # onnxruntime raises its own Fail/RuntimeException types
             raise EmotionDetectionError(f"Failed to load emotion model at '{model_path}'") from exc
