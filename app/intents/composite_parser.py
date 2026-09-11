@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from app.errors import IntentParsingError
 from app.intents.models import ParseResult, Turn
-from app.intents.parser import IntentParser
+from app.intents.parser import FallbackNoticeSource, IntentParser
 
 
 class CompositeIntentParser:
@@ -24,3 +24,9 @@ class CompositeIntentParser:
             return await self._primary.parse(text, history)
         except IntentParsingError:
             return await self._fallback.parse(text, history)
+
+    def take_fallback_notice(self) -> str | None:
+        """Return `primary`'s pending fallback notice, if it tracks one."""
+        if isinstance(self._primary, FallbackNoticeSource):
+            return self._primary.take_fallback_notice()
+        return None

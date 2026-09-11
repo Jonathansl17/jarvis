@@ -28,6 +28,10 @@ names:
 - `GEMINI_API_KEY` — optional. Without it, intents are parsed by keyword
   rules only (`intents/rules/`). With it, Gemini is tried first and the
   rules parser is the fallback on any Gemini failure.
+- `GEMINI_MODELS` — comma-separated Gemini models, tried in order; a model
+  whose free-tier quota is exhausted (429) or that has been retired (404)
+  is skipped in favor of the next one for the rest of the session. Defaults
+  to `gemini-3.6-flash,gemini-flash-lite-latest`.
 - `API_BASE_URL` — base URL of the REST API in `api/`. Defaults to
   `http://localhost:8000`.
 - `MODELS_DIR` — directory holding `facial_emotion_cnn.onnx` and

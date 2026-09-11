@@ -11,7 +11,6 @@ from app.api_client.protocol import PredictionClient
 from app.config import Settings, get_settings
 from app.constants import (
     CAMERA_INDEX,
-    DEFAULT_GEMINI_MODEL,
     EMOTION_SAMPLE_INTERVAL_SECONDS,
     FACE_CASCADE_FILENAME,
     FACIAL_EMOTION_MODEL_FILENAME,
@@ -92,7 +91,7 @@ async def _build_intent_parser(
     except PredictionRequestError:
         startup_notices.append(_NOTICE_API_UNREACHABLE)
         return rules_parser
-    gemini_parser = GeminiParser(settings.gemini_api_key, DEFAULT_GEMINI_MODEL, schemas)
+    gemini_parser = GeminiParser(settings.gemini_api_key, settings.gemini_models, schemas)
     return CompositeIntentParser(gemini_parser, rules_parser)
 
 

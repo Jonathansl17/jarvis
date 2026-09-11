@@ -10,3 +10,4 @@ class AssistantReply:
     text: str
     awaiting_field: bool
     model_name: str | None
+    system_notice: str | None = None

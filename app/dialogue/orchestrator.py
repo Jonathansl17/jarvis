@@ -9,11 +9,8 @@ from app.dialogue.strings import NOT_UNDERSTOOD_TEXT, PREDICTION_ERROR_TEXT
 from app.dialogue.turn_resolution import resolve_turn
 from app.emotion.tone_adapter import ToneAdapter
 from app.errors import IntentParsingError, PredictionRequestError
-from app.intents.models import NeedsInput, ParseResult, ResolvedIntent, Turn
-from app.intents.parser import IntentParser
-
-_USER_SPEAKER = "user"
-_ASSISTANT_SPEAKER = "assistant"
+from app.intents.models import NeedsInput, ParseResult, ResolvedIntent, Speaker, Turn
+from app.intents.parser import FallbackNoticeSource, IntentParser
 
 
 class DialogueOrchestrator:
@@ -33,9 +30,9 @@ class DialogueOrchestrator:
 
     async def handle_user_text(self, text: str) -> AssistantReply:
         """Record `text`, resolve it into a reply, and record that reply too."""
-        self._conversation.add_turn(Turn(speaker=_USER_SPEAKER, text=text))
+        self._conversation.add_turn(Turn(speaker=Speaker.USER, text=text))
         reply = await self._resolve_and_reply(text)
-        self._conversation.add_turn(Turn(speaker=_ASSISTANT_SPEAKER, text=reply.text))
+        self._conversation.add_turn(Turn(speaker=Speaker.ASSISTANT, text=reply.text))
         return reply
 
     async def _resolve_and_reply(self, text: str) -> AssistantReply:
@@ -68,4 +65,15 @@ class DialogueOrchestrator:
     def _reply(self, text: str, *, awaiting_field: bool, model_name: str | None) -> AssistantReply:
         """Build an `AssistantReply`, applying the current tone adaptation."""
         toned_text = self._tone_adapter.apply(text, self._conversation.last_emotion)
-        return AssistantReply(text=toned_text, awaiting_field=awaiting_field, model_name=model_name)
+        return AssistantReply(
+            text=toned_text,
+            awaiting_field=awaiting_field,
+            model_name=model_name,
+            system_notice=self._take_fallback_notice(),
+        )
+
+    def _take_fallback_notice(self) -> str | None:
+        """Return the intent parser's pending fallback notice, if it has one."""
+        if isinstance(self._intent_parser, FallbackNoticeSource):
+            return self._intent_parser.take_fallback_notice()
+        return None

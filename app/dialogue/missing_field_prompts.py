@@ -10,7 +10,7 @@ from app.dialogue.strings import MISSING_FIELD_PREFIX
 
 _FIELD_QUESTIONS: dict[str, str] = {
     # car_price_regression
-    "present_price": "¿cuál es el precio actual del vehículo?",
+    "present_price": "¿cuál es el precio actual del vehículo, en lakhs de rupias (1 lakh = 100 000 rupias)?",
     "year": "¿de qué año es?",
     "kms_driven": "¿cuántos kilómetros tiene recorridos?",
     "owner": "¿cuántos dueños anteriores ha tenido?",
@@ -19,7 +19,7 @@ _FIELD_QUESTIONS: dict[str, str] = {
     "transmission": "¿la transmisión es manual o automática?",
     # body_fat_regression
     "abdomen": "¿cuál es la circunferencia del abdomen, en centímetros?",
-    "weight": "¿cuál es el peso, en kilogramos?",
+    "weight": "¿cuál es el peso, en libras?",
     "wrist": "¿cuál es la circunferencia de la muñeca, en centímetros?",
     # stroke_classification / shared: gender, age
     "gender": "¿es hombre o mujer?",
@@ -29,7 +29,8 @@ _FIELD_QUESTIONS: dict[str, str] = {
     "ever_married": "¿está o ha estado casado/a?",
     "work_type": "¿a qué se dedica (gobierno, empresa privada, independiente)?",
     "Residence_type": "¿vive en una zona urbana o rural?",
-    "avg_glucose_level": "¿cuál es el nivel promedio de glucosa?",
+    "avg_glucose_level": "¿cuál es el nivel promedio de glucosa, en mg/dL?",
+    "bmi": "¿cuál es el índice de masa corporal (IMC)?",
     "smoking_status": "¿fuma, fumó antes, o nunca ha fumado?",
     # hepatitis_type_classification / cirrhosis_type_classification
     "sex": "¿es hombre o mujer?",
@@ -43,7 +44,7 @@ _FIELD_QUESTIONS: dict[str, str] = {
     # avocado_price_regression
     "region": "¿de qué región son los datos?",
     "date": "¿de qué fecha son los datos (AAAA-MM-DD)?",
-    "total_volume": "¿cuál fue el volumen total vendido?",
+    "total_volume": "¿cuál fue el volumen total vendido, en unidades?",
     "plu_4046": "¿cuántas unidades del código PLU 4046 se vendieron?",
     "plu_4225": "¿cuántas unidades del código PLU 4225 se vendieron?",
     "plu_4770": "¿cuántas unidades del código PLU 4770 se vendieron?",
@@ -59,7 +60,7 @@ _FIELD_QUESTIONS: dict[str, str] = {
     "carrier": "¿con qué aerolínea es el vuelo?",
     "origin": "¿cuál es el aeropuerto de origen?",
     "dest": "¿cuál es el aeropuerto de destino?",
-    "distance": "¿cuál es la distancia del vuelo?",
+    "distance": "¿cuál es la distancia del vuelo, en millas?",
     # telecom_churn_classification
     "SeniorCitizen": "¿es una persona adulta mayor?",
     "Partner": "¿tiene pareja?",
@@ -77,7 +78,8 @@ _FIELD_QUESTIONS: dict[str, str] = {
     "PaperlessBilling": "¿tiene facturación electrónica?",
     "PaymentMethod": "¿cuál es su método de pago?",
     "tenure": "¿cuántos meses lleva como cliente?",
-    "MonthlyCharges": "¿cuánto paga mensualmente?",
+    "MonthlyCharges": "¿cuánto paga mensualmente, en dólares?",
+    "TotalCharges": "¿cuánto ha pagado en total hasta ahora, en dólares?",
     # bitcoin_price_regression
     "days": "¿para cuántos días quieres el pronóstico?",
 }

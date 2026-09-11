@@ -8,6 +8,7 @@ from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
 from app.dialogue.strings import EMPTY_TRANSCRIPT_TEXT
 from app.emotion.protocol import Emotion
 from app.errors import SpeechRecognitionError, SynthesisError
+from app.intents.models import Speaker
 from app.ui.frames import AvatarState
 from app.ui.messages import (
     AssistantReplied,
@@ -84,11 +85,11 @@ class JarvisActions:
         if message.text:
             self._submit_text(message.text)
         else:
-            self.query_one(ConversationLog).append_turn("assistant", EMPTY_TRANSCRIPT_TEXT)
+            self.query_one(ConversationLog).append_turn(Speaker.ASSISTANT, EMPTY_TRANSCRIPT_TEXT)
 
     def _submit_text(self, text: str) -> None:
         """Log the user's turn and hand it to the orchestrator in the background."""
-        self.query_one(ConversationLog).append_turn("user", text)
+        self.query_one(ConversationLog).append_turn(Speaker.USER, text)
         self.query_one(AvatarPane).set_state(AvatarState.THINKING)
         self.run_worker(self._run_turn(text), group=_TURN_WORKER_GROUP)
 
@@ -98,8 +99,11 @@ class JarvisActions:
         self.post_message(AssistantReplied(reply))
 
     def on_assistant_replied(self, message: AssistantReplied) -> None:
-        """Log the reply and speak it, if speech synthesis is enabled."""
-        self.query_one(ConversationLog).append_turn("assistant", message.reply.text)
+        """Log any fallback notice and the reply, then speak it if TTS is enabled."""
+        log = self.query_one(ConversationLog)
+        if message.reply.system_notice:
+            log.append_turn(Speaker.SYSTEM, message.reply.system_notice)
+        log.append_turn(Speaker.ASSISTANT, message.reply.text)
         if self._tts_enabled:
             self.run_worker(self._speak(message.reply.text), group=_SPEAKING_WORKER_GROUP)
         else:
@@ -139,4 +143,4 @@ class JarvisActions:
 
     def on_error_occurred(self, message: ErrorOccurred) -> None:
         """Report a background failure as a SYS log line."""
-        self.query_one(ConversationLog).append_turn("system", message.detail)
+        self.query_one(ConversationLog).append_turn(Speaker.SYSTEM, message.detail)

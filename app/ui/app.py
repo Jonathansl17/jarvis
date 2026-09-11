@@ -6,6 +6,7 @@ from textual.containers import Horizontal
 from textual.widgets import Input
 
 from app.dialogue.strings import GREETING_TEXT
+from app.intents.models import Speaker
 from app.ui.actions import JarvisActions
 from app.ui.collaborators import (
     DialogueCollaborators,
@@ -13,17 +14,12 @@ from app.ui.collaborators import (
     RuntimeOptions,
     SpeechCollaborators,
 )
+from app.ui.key_bindings import KEY_BINDINGS
 from app.ui.widgets.avatar_pane import AvatarPane
 from app.ui.widgets.conversation_log import ConversationLog
 from app.ui.widgets.status_bar import StatusBar
 
 _INPUT_PLACEHOLDER = "Escribe y presiona Enter, o con la caja vacía presiona espacio para hablar…"
-_KEY_BINDING_RECORD = "hablar"
-_KEY_BINDING_CAMERA = "cámara"
-_KEY_BINDING_QUIT = "salir"
-_KEY_RECORD = "space"
-_KEY_CAMERA = "ctrl+e"
-_KEY_QUIT = "ctrl+q"
 
 
 class JarvisApp(JarvisActions, App):
@@ -33,9 +29,7 @@ class JarvisApp(JarvisActions, App):
     # priority=True so the keys work while the input line has focus. Space
     # only records when the input is empty, otherwise it types a space.
     BINDINGS = [
-        Binding(_KEY_RECORD, "toggle_recording", _KEY_BINDING_RECORD, priority=True),
-        Binding(_KEY_CAMERA, "toggle_camera", _KEY_BINDING_CAMERA, priority=True),
-        Binding(_KEY_QUIT, "quit", _KEY_BINDING_QUIT, priority=True),
+        Binding(spec.key, spec.action, spec.description, priority=True) for spec in KEY_BINDINGS
     ]
 
     def __init__(
@@ -73,9 +67,9 @@ class JarvisApp(JarvisActions, App):
     def on_mount(self) -> None:
         """Greet the user, surface any startup notices, and start the camera."""
         log = self.query_one(ConversationLog)
-        log.append_turn("assistant", GREETING_TEXT)
+        log.append_turn(Speaker.ASSISTANT, GREETING_TEXT)
         for notice in self._startup_notices:
-            log.append_turn("system", notice)
+            log.append_turn(Speaker.SYSTEM, notice)
         self.query_one("#input-line").focus()
         if self._camera_enabled:
             self._start_emotion_worker()

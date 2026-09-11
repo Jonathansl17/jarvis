@@ -1,14 +1,23 @@
 """The data shapes a parse produces, framework-free."""
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from enum import StrEnum
+from typing import Any
+
+
+class Speaker(StrEnum):
+    """Who produced one conversation turn or log line."""
+
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
 
 
 @dataclass(frozen=True)
 class Turn:
     """One utterance in a conversation, spoken or typed."""
 
-    speaker: Literal["user", "assistant"]
+    speaker: Speaker
     text: str
 
 

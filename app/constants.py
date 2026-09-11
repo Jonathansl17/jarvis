@@ -5,10 +5,14 @@ Anything that varies per deployment lives in `config.py` instead.
 """
 
 GEMINI_API_KEY_ENV_VAR = "GEMINI_API_KEY"
+GEMINI_MODELS_ENV_VAR = "GEMINI_MODELS"
 API_BASE_URL_ENV_VAR = "API_BASE_URL"
 
 DEFAULT_API_BASE_URL = "http://localhost:8000"
-DEFAULT_GEMINI_MODEL = "gemini-3.6-flash"
+# Tried in order; `GeminiParser` moves to the next model on a quota error
+# (429) or a retired model (404), so a free-tier daily limit on the first
+# model does not stop the assistant from using Gemini at all that day.
+GEMINI_MODEL_CHAIN = ("gemini-3.6-flash", "gemini-flash-lite-latest")
 
 PREDICT_ROUTE_PREFIX = "/predict"
 MODELS_ROUTE = "/models"
@@ -16,9 +20,14 @@ MODEL_SCHEMA_ROUTE_TEMPLATE = MODELS_ROUTE + "/{model_name}/schema"
 HEALTH_ROUTE = "/health"
 OPENAPI_ROUTE = "/openapi.json"
 
-# Matched case-insensitively against the start of an utterance; the longer
-# two-word form must be checked before the compact form is assumed absent.
-WAKE_WORDS = ("jarvistec", "jarvis tec")
+# Matched case-insensitively against the start of an utterance. Includes the
+# STT mishearings observed in practice ("yarvis", "yalvis", "jarvi"); each
+# entry is still checked on a full-word boundary, so ordering does not
+# affect which one matches.
+WAKE_WORDS = (
+    "jarvistec", "jarvis tec", "yalvis tec", "yarvis tec",
+    "jarvis", "yarvis", "yalvis", "jarvi",
+)
 
 MODELS_DIR_ENV_VAR = "MODELS_DIR"
 PIPER_CACHE_DIR_ENV_VAR = "PIPER_CACHE_DIR"

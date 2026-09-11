@@ -3,9 +3,14 @@
 from textual.widgets import Static
 
 from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
+from app.ui.key_bindings import KEY_BINDINGS
 
 FIELD_SEPARATOR = "  │  "
-KEY_HINTS_TEXT = "ctrl+q:salir  espacio:hablar  ctrl+e:cámara"
+_KEY_HINT_TEMPLATE = "{key}:{description}"
+_KEY_HINT_SEPARATOR = "  "
+KEY_HINTS_TEXT = _KEY_HINT_SEPARATOR.join(
+    _KEY_HINT_TEMPLATE.format(key=spec.key, description=spec.description) for spec in KEY_BINDINGS
+)
 
 MIC_LISTO = "LISTO"
 MIC_GRABANDO = "GRABANDO"
