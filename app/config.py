@@ -6,9 +6,17 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.constants import API_BASE_URL_ENV_VAR, DEFAULT_API_BASE_URL, GEMINI_API_KEY_ENV_VAR
+from app.constants import (
+    API_BASE_URL_ENV_VAR,
+    DEFAULT_API_BASE_URL,
+    GEMINI_API_KEY_ENV_VAR,
+    MODELS_DIR_ENV_VAR,
+    PIPER_CACHE_DIR_ENV_VAR,
+)
 
 _ENV_FILE_PATH = Path(__file__).resolve().parent / ".env"
+_DEFAULT_MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
+_DEFAULT_PIPER_CACHE_DIR = Path(__file__).resolve().parent / ".cache" / "piper"
 
 
 class Settings(BaseSettings):
@@ -16,12 +24,18 @@ class Settings(BaseSettings):
 
     `gemini_api_key` is optional: without it the app falls back to the
     keyword-rule parser only. `api_base_url` points at the REST API in `api/`.
+    `models_dir` points at the repo-root `models/` directory shared with
+    `api/`. `piper_cache_dir` is where the downloaded Spanish voice is cached.
     """
 
     model_config = SettingsConfigDict(env_file=_ENV_FILE_PATH, extra="ignore")
 
     gemini_api_key: str | None = Field(default=None, validation_alias=GEMINI_API_KEY_ENV_VAR)
     api_base_url: str = Field(default=DEFAULT_API_BASE_URL, validation_alias=API_BASE_URL_ENV_VAR)
+    models_dir: Path = Field(default=_DEFAULT_MODELS_DIR, validation_alias=MODELS_DIR_ENV_VAR)
+    piper_cache_dir: Path = Field(
+        default=_DEFAULT_PIPER_CACHE_DIR, validation_alias=PIPER_CACHE_DIR_ENV_VAR
+    )
 
 
 @lru_cache
