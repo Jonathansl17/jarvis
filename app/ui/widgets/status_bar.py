@@ -5,7 +5,7 @@ from textual.widgets import Static
 from app.constants import EMOTION_LOW_CONFIDENCE_THRESHOLD
 
 FIELD_SEPARATOR = "  │  "
-KEY_HINTS_TEXT = "q:salir  espacio:hablar  e:cámara"
+KEY_HINTS_TEXT = "ctrl+q:salir  espacio:hablar  ctrl+e:cámara"
 
 MIC_LISTO = "LISTO"
 MIC_GRABANDO = "GRABANDO"

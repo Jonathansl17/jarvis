@@ -41,11 +41,11 @@ names:
 
 ## Interaction
 
-- Type a message and press `Enter`, or press `Space` to start recording and
-  `Space` again to stop and transcribe — both paths end up in the same
-  `DialogueOrchestrator.handle_user_text()` call.
-- `q` quits. `e` toggles the webcam emotion sampler. `Tab` switches focus
-  between the input line and the conversation log for scrollback.
+- Type a message and press `Enter`, or, with the input line empty, press
+  `Space` to start recording and `Space` again to stop and transcribe. Both
+  paths end up in the same `DialogueOrchestrator.handle_user_text()` call.
+- `Ctrl+Q` quits. `Ctrl+E` toggles the webcam emotion sampler. `Tab` switches
+  focus between the input line and the conversation log for scrollback.
 - The avatar, status bar, colors, and timings follow the visual spec
   verbatim (`ui/frames.py` for frame art, `ui/styles.tcss` for tokens).
 

@@ -26,13 +26,21 @@ _EMOTION_WORKER_GROUP = "emotion"
 _LISTENING_WORKER_GROUP = "listening"
 _TURN_WORKER_GROUP = "turn"
 _SPEAKING_WORKER_GROUP = "speaking"
+_SPACE = " "
 
 
 class JarvisActions:
     """Mixin holding `JarvisApp`'s bindings, actions, and message handlers."""
 
     def action_toggle_recording(self) -> None:
-        """Start recording on the first press, stop and transcribe on the second."""
+        """Start recording on the first press, stop and transcribe on the second.
+
+        While the user is typing, space keeps its normal meaning.
+        """
+        input_line = self.query_one("#input-line", Input)
+        if input_line.value and not self._recording:
+            input_line.insert_text_at_cursor(_SPACE)
+            return
         if self._recording:
             self._recording = False
             self.query_one(StatusBar).set_mic_state(MIC_PROCESANDO)

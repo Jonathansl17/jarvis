@@ -64,6 +64,8 @@ def _to_parse_result(payload: dict[str, Any]) -> ParseResult:
         missing = payload.get("missing", [])
     except KeyError as exc:
         raise IntentParsingError(f"Gemini response missing key: {exc}") from exc
+    if not model_name:
+        raise IntentParsingError("Gemini could not match the request to any model")
     if missing:
         return NeedsInput(model_name=model_name, fields=fields, missing=missing)
     return ResolvedIntent(model_name=model_name, fields=fields)

@@ -1,6 +1,7 @@
 """Composes the JarvisTEC screen; behavior lives in `ui/actions.py`."""
 
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal
 from textual.widgets import Input
 
@@ -16,20 +17,25 @@ from app.ui.widgets.avatar_pane import AvatarPane
 from app.ui.widgets.conversation_log import ConversationLog
 from app.ui.widgets.status_bar import StatusBar
 
-_INPUT_PLACEHOLDER = "Escribe o presiona espacio para hablar…"
+_INPUT_PLACEHOLDER = "Escribe y presiona Enter, o con la caja vacía presiona espacio para hablar…"
 _KEY_BINDING_RECORD = "hablar"
 _KEY_BINDING_CAMERA = "cámara"
 _KEY_BINDING_QUIT = "salir"
+_KEY_RECORD = "space"
+_KEY_CAMERA = "ctrl+e"
+_KEY_QUIT = "ctrl+q"
 
 
 class JarvisApp(JarvisActions, App):
     """The TUI: avatar pane, conversation log, input line, and status bar."""
 
     CSS_PATH = "styles.tcss"
+    # priority=True so the keys work while the input line has focus. Space
+    # only records when the input is empty, otherwise it types a space.
     BINDINGS = [
-        ("space", "toggle_recording", _KEY_BINDING_RECORD),
-        ("e", "toggle_camera", _KEY_BINDING_CAMERA),
-        ("q", "quit", _KEY_BINDING_QUIT),
+        Binding(_KEY_RECORD, "toggle_recording", _KEY_BINDING_RECORD, priority=True),
+        Binding(_KEY_CAMERA, "toggle_camera", _KEY_BINDING_CAMERA, priority=True),
+        Binding(_KEY_QUIT, "quit", _KEY_BINDING_QUIT, priority=True),
     ]
 
     def __init__(
