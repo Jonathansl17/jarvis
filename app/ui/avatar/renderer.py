@@ -27,22 +27,22 @@ def render_pose(
 
 def _z_order(pose: PenguinPose, expression: Expression | None) -> tuple[Shape, ...]:
     """Assemble the frame's shapes back-to-front, applying expression
-    overrides. The torso (feet/body/head/belly) and cheeks are always drawn
-    first, then flippers, then every face part (eyes/eyebrows/beak) and
-    decoration on top of it — so an open beak, a tongue, or a tear is never
-    covered by the belly or cheeks underneath it.
+    overrides (or a frame's own `*_override`, which wins over either — see
+    `PenguinPose`). The torso (feet/body/head/belly) and cheeks are always
+    drawn first, then flippers, then every face part (eyes/eyebrows/beak)
+    and decoration on top of it — so an open beak, a tongue, or a tear is
+    never covered by the belly or cheeks underneath it.
     """
-    eyes = expression.eyes if expression is not None and expression.eyes is not None else pose.eyes
-    beak = expression.beak if expression is not None and expression.beak is not None else pose.beak
-    flippers = (
-        expression.flippers if expression is not None and expression.flippers is not None else pose.flippers
-    )
-    eyebrows = expression.eyebrows if expression is not None else ()
-    extra = expression.extra if expression is not None else ()
+    eyes = pose.eyes_override if pose.eyes_override is not None else _fallback(pose.eyes, expression, "eyes")
+    beak = _fallback(pose.beak, expression, "beak")
+    flippers_fallback = _fallback(pose.flippers, expression, "flippers")
+    flippers = pose.flippers_override if pose.flippers_override is not None else flippers_fallback
+    eyebrows = pose.eyebrows_override if pose.eyebrows_override is not None else _base_eyebrows(expression)
+    extra = () if pose.replace_expression_extra else _base_extra(expression)
     body, head, belly = _torso_for(pose, expression)
     glow = (pose.glow_ring,) if pose.glow_ring is not None else ()
 
-    torso_layer = glow + FEET + (body, head, belly) + flippers + cheeks_for(expression)
+    torso_layer = glow + FEET + (body, head, belly) + flippers + cheeks_for(expression, pose.cheek)
     face_layer = eyes + eyebrows + beak + extra + pose.extra
     shapes = torso_layer + face_layer
 
@@ -50,6 +50,22 @@ def _z_order(pose: PenguinPose, expression: Expression | None) -> tuple[Shape, .
     if dx or dy:
         shapes = translate_shapes(shapes, dy, dx=dx)
     return shapes
+
+
+def _fallback(pose_value: tuple[Shape, ...], expression: Expression | None, field: str) -> tuple[Shape, ...]:
+    """Return the expression's `field` if it overrides it, else `pose_value`."""
+    expression_value = getattr(expression, field, None) if expression is not None else None
+    return expression_value if expression_value is not None else pose_value
+
+
+def _base_eyebrows(expression: Expression | None) -> tuple[Shape, ...]:
+    """Return an expression's default eyebrows (no pose-level override)."""
+    return expression.eyebrows if expression is not None else ()
+
+
+def _base_extra(expression: Expression | None) -> tuple[Shape, ...]:
+    """Return an expression's default decoration (no pose-level override)."""
+    return expression.extra if expression is not None else ()
 
 
 def _torso_for(pose: PenguinPose, expression: Expression | None) -> tuple[Shape, Shape, Shape]:

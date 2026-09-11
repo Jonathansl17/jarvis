@@ -14,19 +14,21 @@ from app.emotion.protocol import Emotion
 # cheeks, ...) still exists in `expressions.EXPRESSIONS` either way — this
 # flag only controls what the avatar *displays* for a detected angry/disgust
 # frame.
-MIRROR_HOSTILE_EMOTIONS = True
+MIRROR_HOSTILE_EMOTIONS = False
 
 _HOSTILE_TO_NEUTRAL = {
     Emotion.ANGRY: Emotion.NEUTRAL if MIRROR_HOSTILE_EMOTIONS else Emotion.ANGRY,
     Emotion.DISGUST: Emotion.NEUTRAL if MIRROR_HOSTILE_EMOTIONS else Emotion.DISGUST,
 }
 
-# Detected emotion -> what the avatar shows.
+# Detected emotion -> what the avatar shows. Every emotion now has its own
+# distinct idle loop (see `emotion_poses.IDLE_LOOP_FOR_EMOTION`), so each
+# passes through as itself rather than borrowing another's look.
 _AVATAR_EMOTION_FOR: dict[Emotion, Emotion] = {
     Emotion.HAPPY: Emotion.HAPPY,
     Emotion.SAD: Emotion.SAD,
     Emotion.SURPRISE: Emotion.SURPRISE,
-    Emotion.FEAR: Emotion.SURPRISE,
+    Emotion.FEAR: Emotion.FEAR,
     Emotion.NEUTRAL: Emotion.NEUTRAL,
     Emotion.ANGRY: _HOSTILE_TO_NEUTRAL[Emotion.ANGRY],
     Emotion.DISGUST: _HOSTILE_TO_NEUTRAL[Emotion.DISGUST],

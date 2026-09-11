@@ -11,12 +11,20 @@ from dataclasses import dataclass
 
 from app.emotion.protocol import Emotion
 from app.ui.avatar.idle_frames import (
-    IDLE_BOUNCE_FRAME_COUNT,
-    IDLE_BOUNCE_START_INDEX,
-    IDLE_JITTER_FRAME_COUNT,
-    IDLE_JITTER_START_INDEX,
-    IDLE_STEAM_FRAME_COUNT,
-    IDLE_STEAM_START_INDEX,
+    IDLE_ANGRY_START_INDEX,
+    IDLE_DISGUST_START_INDEX,
+    IDLE_FEAR_START_INDEX,
+    IDLE_HAPPY_START_INDEX,
+    IDLE_SAD_START_INDEX,
+    IDLE_SURPRISE_START_INDEX,
+)
+from app.ui.avatar.loops import (
+    ANGRY_FRAMES,
+    DISGUST_FRAMES,
+    FEAR_FRAMES,
+    HAPPY_FRAMES,
+    SAD_FRAMES,
+    SURPRISE_FRAMES,
 )
 from app.ui.avatar.shape_transforms import tilt_to_dx
 
@@ -55,10 +63,13 @@ class IdleLoop:
     frame_count: int
 
 
-# Emotions absent from this table keep idle's plain breathing loop —
-# sad's "slow breathing only" is exactly that default, not an override.
+# Every emotion but neutral gets its own idle loop; neutral is the one
+# emotion absent from this table, keeping idle's plain breathing loop.
 IDLE_LOOP_FOR_EMOTION: dict[Emotion, IdleLoop] = {
-    Emotion.HAPPY: IdleLoop(IDLE_BOUNCE_START_INDEX, IDLE_BOUNCE_FRAME_COUNT),
-    Emotion.ANGRY: IdleLoop(IDLE_STEAM_START_INDEX, IDLE_STEAM_FRAME_COUNT),
-    Emotion.FEAR: IdleLoop(IDLE_JITTER_START_INDEX, IDLE_JITTER_FRAME_COUNT),
+    Emotion.HAPPY: IdleLoop(IDLE_HAPPY_START_INDEX, len(HAPPY_FRAMES)),
+    Emotion.SAD: IdleLoop(IDLE_SAD_START_INDEX, len(SAD_FRAMES)),
+    Emotion.ANGRY: IdleLoop(IDLE_ANGRY_START_INDEX, len(ANGRY_FRAMES)),
+    Emotion.SURPRISE: IdleLoop(IDLE_SURPRISE_START_INDEX, len(SURPRISE_FRAMES)),
+    Emotion.FEAR: IdleLoop(IDLE_FEAR_START_INDEX, len(FEAR_FRAMES)),
+    Emotion.DISGUST: IdleLoop(IDLE_DISGUST_START_INDEX, len(DISGUST_FRAMES)),
 }

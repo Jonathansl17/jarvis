@@ -52,3 +52,28 @@ def _translate_shape(shape: Shape, dx: int, dy: int) -> Shape:
     if isinstance(shape, Polygon):
         return Polygon(tuple((x + dx, y + dy) for x, y in shape.points), fill=shape.fill)
     return Line(tuple((x + dx, y + dy) for x, y in shape.points), fill=shape.fill, width=shape.width)
+
+
+def scale_shapes(shapes: tuple[Shape, ...], scale: float, anchor: tuple[int, int]) -> tuple[Shape, ...]:
+    """Scale every shape in `shapes` by `scale` about the fixed `anchor`
+    point — surprise's exclamation mark popping in/fading, growing or
+    shrinking in place rather than off to one side.
+    """
+    return tuple(_scale_shape(shape, scale, anchor) for shape in shapes)
+
+
+def _scale_shape(shape: Shape, scale: float, anchor: tuple[int, int]) -> Shape:
+    """Scale one shape's geometry by `scale` about `anchor`, preserving style."""
+    anchor_x, anchor_y = anchor
+
+    def scale_point(x: int, y: int) -> tuple[int, int]:
+        return round(anchor_x + (x - anchor_x) * scale), round(anchor_y + (y - anchor_y) * scale)
+
+    if isinstance(shape, Ellipse):
+        x0, y0, x1, y1 = shape.box
+        (sx0, sy0), (sx1, sy1) = scale_point(x0, y0), scale_point(x1, y1)
+        return Ellipse((sx0, sy0, sx1, sy1), fill=shape.fill, outline=shape.outline, width=shape.width)
+    points = tuple(scale_point(x, y) for x, y in shape.points)
+    if isinstance(shape, Polygon):
+        return Polygon(points, fill=shape.fill)
+    return Line(points, fill=shape.fill, width=shape.width)

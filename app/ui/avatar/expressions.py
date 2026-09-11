@@ -16,6 +16,7 @@ from app.ui.avatar import decorations, eyebrows
 from app.ui.avatar import expression_shapes as shapes
 from app.ui.avatar.emotion_poses import BODY_POSES, BodyPose
 from app.ui.avatar.mirroring import HOP_TRIGGER_EMOTIONS, map_emotion_to_avatar
+from app.ui.avatar.pose_types import CheekPulse
 from app.ui.avatar.shapes import (
     AVATAR_BELLY,
     AVATAR_BELLY_SAD,
@@ -124,8 +125,13 @@ def resolve_expression(emotion: Emotion) -> Expression:
     return EXPRESSIONS[map_emotion_to_avatar(emotion)]
 
 
-def cheeks_for(expression: Expression | None) -> tuple[Shape, ...]:
-    """Return the cheek shapes an expression asks for (default if `None`)."""
+def cheeks_for(expression: Expression | None, pulse: CheekPulse | None = None) -> tuple[Shape, ...]:
+    """Return the cheek shapes an expression asks for (default if `None`),
+    or `pulse`'s scale/opacity instead when an idle-loop frame supplies one
+    (an emotion's cheeks swelling or pulsing on specific frames)."""
+    fill = expression.cheek_fill if expression is not None else AVATAR_CHEEK
+    if pulse is not None:
+        return cheek_shapes(pulse.opacity, fill, pulse.scale)
     if expression is None:
-        return cheek_shapes(_CHEEK_OPACITY_DEFAULT)
-    return cheek_shapes(expression.cheek_opacity, expression.cheek_fill, expression.cheek_scale)
+        return cheek_shapes(_CHEEK_OPACITY_DEFAULT, fill)
+    return cheek_shapes(expression.cheek_opacity, fill, expression.cheek_scale)

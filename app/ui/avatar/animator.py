@@ -2,26 +2,28 @@
 that owns it supplies the scheduler (shaped like `tkinter.Widget.after`).
 
 Idle is not a plain loop: on top of its breathing cycle, this animator
-splices in a randomly timed blink and a periodic flipper wave, and can play
-a one-shot reaction (the post-reply hop) before resuming it. All three are
-still addressed as indices into `POSES[AvatarState.IDLE]` (see
-`idle_frames.py`), so every frame stays cached by the same
-`(state, index, emotion)` key the renderer already uses for a plain loop.
+splices in a blink, a flipper wave, a one-shot post-reply hop, and a
+reaction transition on emotion change (see `set_emotion`). All are still
+addressed as indices into `POSES[AvatarState.IDLE]` (`idle_frames.py`), so
+every frame stays cached by the same `(state, index, emotion)` key the
+renderer already uses for a plain loop.
 """
 
-import random
 from collections.abc import Callable
 
 from PIL.Image import Image
 
 from app.emotion.protocol import Emotion
+from app.ui.avatar.emotion_display import displayed_emotion
 from app.ui.avatar.emotion_poses import IDLE_LOOP_FOR_EMOTION
-from app.ui.avatar.mirroring import map_emotion_to_avatar
+from app.ui.avatar.idle_timers import BLINK_EVENT, WAVE_EVENT, IdleTimers
 from app.ui.avatar.spec import (
     IDLE_BLINK_INDEX,
     IDLE_BREATHE_FRAME_COUNT,
     IDLE_HOP_FRAME_COUNT,
     IDLE_HOP_START_INDEX,
+    IDLE_TRANSITION_FRAME_COUNT,
+    IDLE_TRANSITION_START_INDEX,
     IDLE_WAVE_FRAME_COUNT,
     IDLE_WAVE_START_INDEX,
     POSES,
@@ -30,9 +32,6 @@ from app.ui.avatar.spec import (
 
 RenderFrame = Callable[[AvatarState, int, Emotion | None], Image]
 Schedule = Callable[[int, Callable[[], None]], object]
-
-_BLINK_INTERVAL_RANGE_MS = (4000, 7000)
-_WAVE_INTERVAL_MS = 12000
 
 
 class AvatarAnimator:
@@ -46,6 +45,7 @@ class AvatarAnimator:
         self._stopped = False
         self._playing_event = False
         self._event_indices: list[int] = []
+        self._idle_timers = IdleTimers()
         self._reset_for_state(AvatarState.IDLE)
 
     def set_state(self, state: AvatarState) -> None:
@@ -54,13 +54,25 @@ class AvatarAnimator:
         self._render_and_reschedule()
 
     def set_emotion(self, emotion: Emotion | None) -> None:
-        """Update the emotion overlaid on whatever state is currently active,
-        re-centering idle's loop on the new emotion's own loop if it has one.
-        """
+        """Update the emotion overlaid on the current state; if idle and the
+        *displayed* emotion actually changes, play a reaction transition
+        first instead of cutting straight to the new loop."""
+        previous_displayed = displayed_emotion(self._emotion)
         self._emotion = emotion
-        if self._state is AvatarState.IDLE and not self._playing_event:
+        if self._should_play_transition(previous_displayed):
+            self._start_event(IDLE_TRANSITION_START_INDEX, IDLE_TRANSITION_FRAME_COUNT)
+        elif self._state is AvatarState.IDLE and not self._playing_event:
             self._frame_index, _ = self._active_idle_loop()
         self._on_frame(self._render(self._state, self._frame_index, self._emotion))
+
+    def _should_play_transition(self, previous_displayed: Emotion | None) -> bool:
+        """Whether a reaction transition should play: only while idle, only
+        when not already mid-event, and only on an actual display change."""
+        return (
+            self._state is AvatarState.IDLE
+            and not self._playing_event
+            and displayed_emotion(self._emotion) != previous_displayed
+        )
 
     def play_hop_then_idle(self) -> None:
         """Play the one-time post-reply hop, then settle into idle breathing."""
@@ -79,16 +91,13 @@ class AvatarAnimator:
         self._playing_event = False
         if state is AvatarState.IDLE:
             self._frame_index, _ = self._active_idle_loop()
-            self._ms_until_blink = self._random_blink_interval()
-            self._ms_until_wave = _WAVE_INTERVAL_MS
+            self._idle_timers.reset()
 
     def _active_idle_loop(self) -> tuple[int, int]:
         """Return the `(start_index, frame_count)` idle loop the current
         displayed emotion drives: breathing by default, or that emotion's
-        own bounce/steam/jitter loop (see `emotion_poses.IDLE_LOOP_FOR_EMOTION`).
-        """
-        displayed = map_emotion_to_avatar(self._emotion) if self._emotion is not None else None
-        loop = IDLE_LOOP_FOR_EMOTION.get(displayed) if displayed is not None else None
+        own loop (see `emotion_poses.IDLE_LOOP_FOR_EMOTION`)."""
+        loop = IDLE_LOOP_FOR_EMOTION.get(displayed_emotion(self._emotion))
         return (loop.start_index, loop.frame_count) if loop is not None else (0, IDLE_BREATHE_FRAME_COUNT)
 
     def _render_and_reschedule(self) -> None:
@@ -123,13 +132,10 @@ class AvatarAnimator:
 
     def _advance_idle(self, elapsed_ms: int) -> None:
         """Tick idle's active loop, triggering a blink or wave when due."""
-        self._ms_until_blink -= elapsed_ms
-        self._ms_until_wave -= elapsed_ms
-        if self._ms_until_blink <= 0:
-            self._ms_until_blink = self._random_blink_interval()
+        due_event = self._idle_timers.tick(elapsed_ms)
+        if due_event == BLINK_EVENT:
             self._start_event(IDLE_BLINK_INDEX, 1)
-        elif self._ms_until_wave <= 0:
-            self._ms_until_wave = _WAVE_INTERVAL_MS
+        elif due_event == WAVE_EVENT:
             self._start_event(IDLE_WAVE_START_INDEX, IDLE_WAVE_FRAME_COUNT)
         else:
             start, count = self._active_idle_loop()
@@ -140,7 +146,3 @@ class AvatarAnimator:
         self._playing_event = True
         self._event_indices = list(range(start_index + 1, start_index + frame_count))
         self._frame_index = start_index
-
-    def _random_blink_interval(self) -> float:
-        """Pick the next blink's delay, uniformly within the spec's 4-7s range."""
-        return random.uniform(*_BLINK_INTERVAL_RANGE_MS)
