@@ -1,0 +1,38 @@
+Frases de ejemplo para JarvisTEC, una por modelo, con todos los datos que el
+modelo necesita para responder de una sola vez. Se pueden decir por voz
+(Ctrl+Espacio) o escribir y enviar con Enter.
+
+1. Bitcoin (ARIMA)
+JarvisTEC, ¿cuál será el precio del bitcoin para los próximos 5 días?
+
+2. Precio de un carro usado (regresión lineal)
+JarvisTEC, ¿cuánto vale un carro diesel del 2015 que nuevo costó 10 lakhs, tiene 40 mil kilómetros, un solo dueño, lo vende una agencia y es manual?
+
+3. Abandono de cliente de telefonía (red neuronal)
+JarvisTEC, ¿se va a ir un cliente hombre, no es adulto mayor, sin pareja ni dependientes, con teléfono y una sola línea, internet de fibra óptica, sin seguridad en línea, sin respaldo, sin protección de equipo, sin soporte técnico, con streaming de tele y películas, contrato mes a mes, factura electrónica, paga con cheque electrónico, lleva 3 meses y paga 95 dólares al mes?
+
+4. Calidad de un vino (KNN)
+JarvisTEC, ¿qué calidad tiene un vino blanco con 13.5 de alcohol, densidad 0.99, 30 de dióxido de azufre libre, 120 de dióxido de azufre total, acidez volátil 0.25 y 2 de azúcar residual?
+
+5. Retraso de un vuelo (árbol de decisión)
+JarvisTEC, ¿cuánto se va a retrasar el vuelo de American Airlines de Chicago a Los Ángeles el viernes 19 de diciembre a las 6 de la tarde, con 1745 millas de distancia?
+
+6. Riesgo de derrame cerebral (regresión logística)
+JarvisTEC, ¿qué riesgo de derrame tiene un hombre de 68 años, hipertenso, sin enfermedad del corazón, casado, que trabaja en una empresa privada, vive en la ciudad, con glucosa de 140, índice de masa corporal 31 y que dejó de fumar?
+
+7. Etapa de cirrosis (SVM)
+JarvisTEC, ¿tiene cirrosis una mujer de 55 años sin edema, sin ascitis, con hepatomegalia, sin arañas vasculares, tratada con placebo, bilirrubina 2.5, albúmina 3.2, cobre 100, fosfatasa alcalina 1500, SGOT 120, plaquetas 200 y protrombina 11?
+
+8. Precio del aguacate (random forest)
+JarvisTEC, ¿a cuánto estaría el aguacate orgánico en San Francisco el 10 de septiembre de 2017 con un volumen total de 20 mil, 5 mil del código 4046, 6 mil del 4225, mil del 4770, 8 mil bolsas en total, 7 mil bolsas pequeñas, mil grandes y ninguna extragrande?
+
+9. Categoría de hepatitis C (naive bayes)
+JarvisTEC, ¿qué categoría de hepatitis tiene un hombre de 45 años con albúmina 38, fosfatasa alcalina 60, ALT 30, AST 90, bilirrubina 30, colinesterasa 5, colesterol 4, creatinina 80, GGT 120 y proteínas 70?
+
+10. Porcentaje de grasa corporal (regresión lineal)
+JarvisTEC, ¿cuál es mi porcentaje de grasa corporal si mi abdomen mide 90 centímetros, peso 175 libras y mi muñeca mide 18 centímetros?
+
+Notas
+- Con Gemini activo (GEMINI_API_KEY en app/.env) estas frases se resuelven de una sola.
+- Sin Gemini, las reglas locales detectan el modelo y los números, pero pueden pedir algún campo que no reconozcan por nombre.
+- Las unidades son las del dataset de cada modelo: lakhs de rupias para el carro, libras y centímetros para grasa corporal, millas para el vuelo, dólares para telefonía y aguacate.
