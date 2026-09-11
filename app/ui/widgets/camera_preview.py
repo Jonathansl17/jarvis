@@ -25,6 +25,7 @@ class CameraPreview(ctk.CTkFrame):
 
     def __init__(self, master: ctk.CTkBaseClass, fonts: Fonts, **kwargs: object) -> None:
         super().__init__(master, fg_color="transparent", **kwargs)
+        self._enabled = True
         self._video_label = ctk.CTkLabel(
             self,
             text="",
@@ -39,13 +40,22 @@ class CameraPreview(ctk.CTkFrame):
         self._emotion_label.pack(pady=(_VIDEO_EMOTION_GAP_PX, 0))
 
     def show_disabled(self) -> None:
-        """Clear the video image and show the disabled placeholder text."""
-        self._video_label.configure(image=None)
+        """Black out the video and show the disabled placeholder text.
+
+        Frames still in flight from the stopping worker are dropped until
+        `show_enabled` is called again.
+        """
+        self._enabled = False
+        self._show_video(Image.new("RGB", (VIDEO_WIDTH_PX, VIDEO_HEIGHT_PX), theme.COLOR_BG_APP))
         self._emotion_label.configure(text=strings.CAMERA_DISABLED_LABEL, text_color=theme.COLOR_TEXT_SECONDARY)
+
+    def show_enabled(self) -> None:
+        """Accept frames again after the camera was switched back on."""
+        self._enabled = True
 
     def update_sample(self, sample: CameraSample | None) -> None:
         """Render the sampled frame and update the emotion-word label."""
-        if sample is None:
+        if sample is None or not self._enabled:
             return
         self._show_video(render_camera_frame(sample.frame, sample.box, sample.reading))
         self._emotion_label.configure(**_emotion_label_kwargs(sample.reading))

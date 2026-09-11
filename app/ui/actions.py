@@ -53,6 +53,7 @@ class JarvisActions:
         """Turn webcam emotion sampling on or off (Ctrl+E or the card button, §15)."""
         self._camera_enabled = not self._camera_enabled
         if self._camera_enabled:
+            self.camera_preview.show_enabled()
             self._start_camera_worker()
             self.camera_toggle_button.configure(text=strings.CAMERA_TOGGLE_ON)
         else:
