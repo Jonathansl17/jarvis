@@ -37,7 +37,14 @@ class ConversationView(ctk.CTkScrollableFrame):
             self._append_system_row(text)
         else:
             self._append_bubble_row(speaker, text)
-        self._parent_canvas.yview_moveto(1.0)
+        self.after_idle(self._scroll_to_bottom)
+
+    def _scroll_to_bottom(self) -> None:
+        """Refresh the scroll region once the new row is laid out, then jump to it."""
+        self.update_idletasks()
+        canvas = self._parent_canvas
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        canvas.yview_moveto(1.0)
 
     def _append_system_row(self, text: str) -> None:
         """A centered, muted line with no bubble or sender label."""
