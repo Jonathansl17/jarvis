@@ -15,7 +15,7 @@ from app.ui.collaborators import (
 )
 from app.ui.dispatch_handlers import JarvisDispatchHandlers
 from app.ui.key_bindings import KEY_BINDINGS
-from app.ui.layout_types import StatusBarInfo, WindowCallbacks
+from app.ui.layout_types import WindowCallbacks, WindowStartupState
 
 _DISPATCH_POLL_MS = 50
 
@@ -45,7 +45,9 @@ class JarvisApp(JarvisActions, JarvisDispatchHandlers):
         self._recording = False
         self._camera_worker = None
         self.root = ctk.CTk()
-        self._build_window(options.stt_engine_name, options.initial_ia_state)
+        self._build_window(
+            WindowStartupState(options.stt_engine_name, options.initial_ia_state, options.camera_enabled)
+        )
 
     def run(self) -> None:
         """Show the greeting, start the camera if enabled, and block on Tk."""
@@ -66,13 +68,13 @@ class JarvisApp(JarvisActions, JarvisDispatchHandlers):
         self._bridge.stop()
         self.root.destroy()
 
-    def _build_window(self, stt_engine_name: str, initial_ia_state: str) -> None:
+    def _build_window(self, startup: WindowStartupState) -> None:
         """Lay out the window's widgets, bind global keys, and wire the close handler."""
         fonts = theme.apply_theme()
         callbacks = WindowCallbacks(
             on_send=self.on_send, on_mic_toggle=self.on_mic_toggle, on_camera_toggle=self.on_camera_toggle
         )
-        widgets = layout.build_window(self.root, fonts, StatusBarInfo(stt_engine_name, initial_ia_state), callbacks)
+        widgets = layout.build_window(self.root, fonts, startup, callbacks)
         self.avatar_pane = widgets.avatar_pane
         self.camera_preview = widgets.camera_preview
         self.camera_toggle_button = widgets.camera_toggle_button

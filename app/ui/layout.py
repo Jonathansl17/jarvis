@@ -2,11 +2,10 @@
 strip, per §2-3 of the design spec. Pure Tk composition, no app behavior.
 """
 
-from collections.abc import Callable
-
 import customtkinter as ctk
 
 from app.ui import strings, theme
+from app.ui.layout_cards import build_camera_toggle_button, make_card
 from app.ui.layout_types import WindowCallbacks, WindowStartupState, WindowWidgets
 from app.ui.widgets.avatar_pane import AvatarPane
 from app.ui.widgets.camera_preview import CameraPreview
@@ -21,15 +20,17 @@ _LEFT_COLUMN_WIDTH_PX = 308
 WINDOW_PADDING_PX = 16
 _COLUMN_GAP_PX = 16
 _CARD_GAP_PX = 12
-_CARD_CORNER_RADIUS_PX = 12
 _CARD_PADDING_PX = 14
-_CAMERA_TOGGLE_SIZE_PX = (44, 22)
 
 
 def build_window(
-    root: ctk.CTk, fonts: theme.Fonts, status_info: StatusBarInfo, callbacks: WindowCallbacks
+    root: ctk.CTk, fonts: theme.Fonts, startup: WindowStartupState, callbacks: WindowCallbacks
 ) -> WindowWidgets:
-    """Configure `root`'s chrome and grid, returning every interactive widget."""
+    """Configure `root`'s chrome and grid once, returning every interactive widget.
+
+    Sizing/position are set here only, at startup — never again on resize;
+    the window manager and Tk's own geometry manager own everything after.
+    """
     root.title(strings.WINDOW_TITLE)
     root.geometry(WINDOW_SIZE)
     root.minsize(*WINDOW_MIN_SIZE)
@@ -39,34 +40,39 @@ def build_window(
     root.grid_rowconfigure(0, weight=1)
     root.grid_rowconfigure(1, weight=0)
 
-    avatar_pane, camera_preview, camera_toggle_button = _build_left_column(root, fonts, callbacks.on_camera_toggle)
+    avatar_pane, camera_preview, camera_toggle_button = _build_left_column(root, fonts, startup, callbacks)
     conversation_view, input_row = _build_right_column(root, fonts, callbacks)
-    status_bar = _build_bottom_bar(root, fonts, status_info)
+    status_bar = _build_bottom_bar(root, fonts, startup)
     return WindowWidgets(
         avatar_pane, camera_preview, camera_toggle_button, conversation_view, input_row, status_bar
     )
 
 
-def _build_bottom_bar(root: ctk.CTk, fonts: theme.Fonts, status_info: StatusBarInfo) -> StatusBar:
+def _build_bottom_bar(root: ctk.CTk, fonts: theme.Fonts, startup: WindowStartupState) -> StatusBar:
     """Stack the key-hints row above the status strip, spanning both columns."""
     bottom = ctk.CTkFrame(root, fg_color="transparent")
     bottom.grid(row=1, column=0, columnspan=2, sticky="ew", padx=WINDOW_PADDING_PX, pady=(0, WINDOW_PADDING_PX))
     KeyHintsBar(bottom, fonts).pack(fill="x", pady=(0, 4))
-    status_bar = StatusBar(bottom, status_info.stt_engine_name, status_info.initial_ia_state, fonts)
+    status_bar = StatusBar(bottom, startup.stt_engine_name, startup.initial_ia_state, fonts)
     status_bar.pack(fill="x")
     return status_bar
 
 
 def _build_left_column(
-    root: ctk.CTk, fonts: theme.Fonts, on_camera_toggle: Callable[[], None]
+    root: ctk.CTk, fonts: theme.Fonts, startup: WindowStartupState, callbacks: WindowCallbacks
 ) -> tuple[AvatarPane, CameraPreview, ctk.CTkButton]:
-    """Build the fixed-width avatar and camera cards."""
+    """Build the fixed-width avatar and camera cards.
+
+    `grid_propagate(False)` on this column, plus the avatar/camera images'
+    own fixed pixel sizes, keep the incoming webcam/avatar frames from ever
+    driving this layout's size — only the window/card chrome does.
+    """
     column = ctk.CTkFrame(root, width=_LEFT_COLUMN_WIDTH_PX, fg_color="transparent")
     column.grid(row=0, column=0, sticky="ns", padx=(WINDOW_PADDING_PX, _COLUMN_GAP_PX // 2), pady=WINDOW_PADDING_PX)
     column.grid_propagate(False)
     column.grid_rowconfigure(1, weight=1)
 
-    avatar_card = _make_card(column, fonts, strings.CARD_TITLE_AVATAR)
+    avatar_card = make_card(column, fonts, strings.CARD_TITLE_AVATAR)
     avatar_card.grid(row=0, column=0, sticky="ew")
     avatar_pane = AvatarPane(avatar_card)
     avatar_pane.pack(pady=(0, _CARD_PADDING_PX // 2))
@@ -75,11 +81,14 @@ def _build_left_column(
 
     def _attach_toggle(header: ctk.CTkFrame) -> ctk.CTkButton:
         nonlocal camera_toggle_button
-        camera_toggle_button = _build_camera_toggle_button(header, fonts, on_camera_toggle)
+        camera_toggle_button = build_camera_toggle_button(
+            header, fonts, startup.camera_enabled, callbacks.on_camera_toggle
+        )
         return camera_toggle_button
 
-    camera_card = _make_card(column, fonts, strings.CARD_TITLE_CAMERA, right_widget_factory=_attach_toggle)
+    camera_card = make_card(column, fonts, strings.CARD_TITLE_CAMERA, right_widget_factory=_attach_toggle)
     camera_card.grid(row=1, column=0, sticky="nsew", pady=(_CARD_GAP_PX, 0))
+    camera_card.grid_propagate(False)
     camera_preview = CameraPreview(camera_card, fonts)
     camera_preview.pack()
     return avatar_pane, camera_preview, camera_toggle_button
@@ -94,7 +103,7 @@ def _build_right_column(
     column.grid_rowconfigure(0, weight=1)
     column.grid_columnconfigure(0, weight=1)
 
-    conversation_card = _make_card(column, fonts, strings.CARD_TITLE_CONVERSATION)
+    conversation_card = make_card(column, fonts, strings.CARD_TITLE_CONVERSATION)
     conversation_card.grid(row=0, column=0, sticky="nsew")
     conversation_view = ConversationView(conversation_card, fonts)
     conversation_view.pack(fill="both", expand=True)
@@ -102,37 +111,3 @@ def _build_right_column(
     input_row = InputRow(column, fonts, on_send=callbacks.on_send, on_mic_toggle=callbacks.on_mic_toggle)
     input_row.grid(row=1, column=0, sticky="ew", pady=(_CARD_GAP_PX, 0))
     return conversation_view, input_row
-
-
-def _make_card(
-    master: ctk.CTkBaseClass,
-    fonts: theme.Fonts,
-    title: str,
-    right_widget_factory: Callable[[ctk.CTkFrame], ctk.CTkBaseClass] | None = None,
-) -> ctk.CTkFrame:
-    """Build one titled card frame: rounded, padded, with its header packed."""
-    card = ctk.CTkFrame(master, fg_color=theme.COLOR_BG_CARD, corner_radius=_CARD_CORNER_RADIUS_PX)
-    header = ctk.CTkFrame(card, fg_color="transparent")
-    header.pack(fill="x", padx=_CARD_PADDING_PX, pady=(_CARD_PADDING_PX, _CARD_PADDING_PX // 2))
-    ctk.CTkLabel(header, text=title, font=fonts.card_title, text_color=theme.COLOR_TEXT_PRIMARY).pack(side="left")
-    if right_widget_factory is not None:
-        right_widget_factory(header).pack(side="right")
-    return card
-
-
-def _build_camera_toggle_button(
-    header: ctk.CTkFrame, fonts: theme.Fonts, on_camera_toggle: Callable[[], None]
-) -> ctk.CTkButton:
-    """A small ON/OFF button for mouse-only users to toggle the webcam (§15)."""
-    width, height = _CAMERA_TOGGLE_SIZE_PX
-    return ctk.CTkButton(
-        header,
-        text=strings.CAMERA_TOGGLE_ON,
-        width=width,
-        height=height,
-        corner_radius=height // 2,
-        font=fonts.body_small,
-        fg_color=theme.COLOR_ACCENT_PRIMARY,
-        text_color=theme.COLOR_BG_APP,
-        command=on_camera_toggle,
-    )
