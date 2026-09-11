@@ -35,14 +35,48 @@ FIELD_EXTRACTORS: dict[str, FieldExtractor] = {
 }
 
 MODEL_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "car_price_regression": ("carro", "auto", "vehiculo", "vehículo", "coche"),
-    "body_fat_regression": ("grasa corporal", "porcentaje de grasa"),
-    "stroke_classification": ("derrame", "acv", "accidente cerebrovascular"),
-    "hepatitis_type_classification": ("hepatitis",),
-    "cirrhosis_type_classification": ("cirrosis",),
-    "wine_quality_classification": ("vino",),
-    "avocado_price_regression": ("aguacate", "palta"),
-    "flight_delay_regression": ("vuelo", "retraso de vuelo"),
-    "telecom_churn_classification": ("churn", "abandono de clientes", "cliente se vaya"),
-    "bitcoin_price_regression": ("bitcoin", "btc"),
+    "car_price_regression": (
+        "carro", "auto", "automovil", "automóvil", "vehiculo", "vehículo", "coche", "camioneta",
+        "pickup", "pick up", "suv", "sedan", "sedán", "moto", "motocicleta", "usado", "segunda mano",
+        "precio del carro", "cuanto vale", "cuánto vale", "valor de venta", "revender",
+    ),
+    "body_fat_regression": (
+        "grasa corporal", "porcentaje de grasa", "grasa", "body fat", "masa corporal", "masa grasa",
+        "cuanta grasa", "cuánta grasa", "medidas corporales", "composicion corporal", "composición corporal",
+    ),
+    "stroke_classification": (
+        "derrame", "derrame cerebral", "acv", "accidente cerebrovascular", "accidente cerebro vascular",
+        "stroke", "infarto cerebral", "embolia", "ictus", "apoplejia", "apoplejía", "riesgo cerebral",
+    ),
+    "hepatitis_type_classification": (
+        "hepatitis", "hepatitis c", "panel hepatico", "panel hepático", "donante de sangre", "fibrosis",
+        "enzimas hepaticas", "enzimas hepáticas", "examen de higado", "examen de hígado",
+    ),
+    "cirrhosis_type_classification": (
+        "cirrosis", "cirrosis hepatica", "cirrosis hepática", "etapa de cirrosis", "estadio de cirrosis",
+        "higado", "hígado", "biliar", "colangitis", "bilirrubina", "albumina", "albúmina",
+    ),
+    "wine_quality_classification": (
+        "vino", "vinos", "calidad del vino", "vino tinto", "vino blanco", "cata", "bodega", "uva",
+        "cosecha", "vinedo", "viñedo", "wine",
+    ),
+    "avocado_price_regression": (
+        "aguacate", "aguacates", "palta", "paltas", "avocado", "hass", "guacamole",
+        "precio del aguacate", "precio de la palta",
+    ),
+    "flight_delay_regression": (
+        "vuelo", "vuelos", "retraso de vuelo", "retraso del vuelo", "delay", "avion", "avión",
+        "aerolinea", "aerolínea", "aeropuerto", "llegada del vuelo", "atraso del vuelo", "demora del vuelo",
+        "viaje en avion", "viaje en avión", "se atrasa el vuelo", "se retrasa el vuelo",
+    ),
+    "telecom_churn_classification": (
+        "churn", "abandono de clientes", "cliente se vaya", "cliente se va", "se cambie de compania",
+        "se cambie de compañia", "se cambie de compañía", "cancelar el servicio", "dar de baja", "darse de baja",
+        "telefonia", "telefonía", "telecomunicaciones", "operador", "operadora", "plan de celular",
+        "plan de internet", "fuga de clientes", "perder el cliente", "cliente de telecom",
+    ),
+    "bitcoin_price_regression": (
+        "bitcoin", "btc", "cripto", "criptomoneda", "criptomonedas", "crypto", "precio del bitcoin",
+        "tipo de cambio", "cotizacion", "cotización", "moneda digital",
+    ),
 }
