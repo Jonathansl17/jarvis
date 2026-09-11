@@ -19,7 +19,10 @@ _OPTIONAL_LAB_KEYWORDS: dict[str, tuple[str, ...]] = {
     "CHOL": ("colesterol", "chol"),
     "CREA": ("creatinina", "crea"),
     "GGT": ("ggt",),
-    "PROT": ("proteinas totales", "proteínas totales", "prot"),
+    # No bare "prot" abbreviation: it is a substring of "proteínas" itself,
+    # so it would anchor to whatever number came right before that word
+    # (e.g. a preceding "GGT 120") instead of the protein reading after it.
+    "PROT": ("proteinas totales", "proteínas totales", "proteinas", "proteínas"),
 }
 
 

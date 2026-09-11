@@ -3,8 +3,8 @@
 from typing import Any, ClassVar
 
 from app.intents.rules.base import find_boolean, find_literal, find_number_near
+from app.intents.rules.tables.affirmation import YES_NO_ALIASES
 
-_YES_NO_ALIASES = {"Yes": ("si", "sí"), "No": ("no",)}
 _GENDER_ALIASES = {"Male": ("hombre", "masculino"), "Female": ("mujer", "femenino")}
 _INTERNET_ALIASES = {"DSL": ("dsl",), "Fiber optic": ("fibra optica", "fibra óptica"), "No": ("sin internet",)}
 _CONTRACT_ALIASES = {
@@ -20,8 +20,10 @@ _PAYMENT_ALIASES = {
 }
 _SENIOR_TRUE = ("adulto mayor", "tercera edad")
 _SENIOR_FALSE = ("joven", "no es adulto mayor")
-_TENURE_KEYWORDS = ("meses de antiguedad", "meses como cliente", "antiguedad", "antigüedad")
-_MONTHLY_CHARGE_KEYWORDS = ("cargo mensual", "factura mensual", "mensualidad")
+_TENURE_MONTH_KEYWORDS = ("meses de antiguedad", "meses como cliente", "antiguedad", "antigüedad", "meses")
+_TENURE_YEAR_KEYWORDS = ("años de antiguedad", "años como cliente", "años", "anos")
+_MONTHLY_CHARGE_KEYWORDS = ("cargo mensual", "factura mensual", "mensualidad", "al mes", "por mes")
+_MONTHS_PER_YEAR = 12
 
 # Literal fields that reuse the plain yes/no alias table.
 _YES_NO_FIELDS = (
@@ -52,7 +54,7 @@ class TelecomChurnClassificationExtractor:
         senior = find_boolean(text, _SENIOR_TRUE, _SENIOR_FALSE)
         if senior is not None:
             fields["SeniorCitizen"] = senior
-        tenure = find_number_near(text, _TENURE_KEYWORDS)
+        tenure = _find_tenure_in_months(text)
         if tenure is not None:
             fields["tenure"] = tenure
         monthly_charges = find_number_near(text, _MONTHLY_CHARGE_KEYWORDS)
@@ -74,6 +76,15 @@ class TelecomChurnClassificationExtractor:
         if payment is not None:
             fields["PaymentMethod"] = payment
         for field in _YES_NO_FIELDS:
-            value = find_literal(text, _YES_NO_ALIASES)
+            value = find_literal(text, YES_NO_ALIASES)
             if value is not None:
                 fields[field] = value
+
+
+def _find_tenure_in_months(text: str) -> float | None:
+    """Return how long the subscriber has stayed, normalized to months."""
+    months = find_number_near(text, _TENURE_MONTH_KEYWORDS)
+    if months is not None:
+        return months
+    years = find_number_near(text, _TENURE_YEAR_KEYWORDS)
+    return years * _MONTHS_PER_YEAR if years is not None else None

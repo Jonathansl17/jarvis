@@ -8,10 +8,25 @@ _AGE_KEYWORDS = ("años", "anos", "edad")
 _GLUCOSE_KEYWORDS = ("glucosa",)
 _BMI_KEYWORDS = ("imc", "masa corporal")
 
-_HYPERTENSION_TRUE = ("hipertension", "hipertensión", "presion alta", "presión alta")
-_HYPERTENSION_FALSE = ("sin hipertension", "sin hipertensión", "no tiene hipertension")
-_HEART_DISEASE_TRUE = ("enfermedad cardiaca", "enfermedad cardíaca", "problema del corazon")
-_HEART_DISEASE_FALSE = ("sin enfermedad cardiaca", "no tiene problemas del corazon")
+_HYPERTENSION_TRUE = (
+    "hipertenso", "hipertensa", "hipertension", "hipertensión",
+    "presion alta", "presión alta",
+)
+_HYPERTENSION_FALSE = (
+    "sin hipertension", "sin hipertensión", "no es hipertenso", "no es hipertensa",
+    "no tiene hipertension", "no tiene hipertensión",
+)
+_HEART_DISEASE_TRUE = (
+    "enfermedad del corazon", "enfermedad del corazón", "enfermedad cardiaca",
+    "enfermedad cardíaca", "problema del corazon", "problema cardiaco",
+    "problema cardíaco", "cardiaco", "cardíaco",
+)
+_HEART_DISEASE_FALSE = (
+    "sin enfermedad del corazon", "sin enfermedad del corazón",
+    "sin enfermedad cardiaca", "sin enfermedad cardíaca",
+    "sin problemas cardiacos", "sin problemas cardíacos",
+    "no tiene problemas del corazon", "no tiene enfermedad del corazon",
+)
 
 _GENDER_ALIASES = {"Male": ("hombre", "masculino", "varon", "varón"), "Female": ("mujer", "femenino")}
 _MARRIED_ALIASES = {"Yes": ("casado", "casada"), "No": ("soltero", "soltera")}

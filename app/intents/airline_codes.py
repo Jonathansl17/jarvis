@@ -18,5 +18,9 @@ AIRPORT_CODES: dict[str, str] = {
     "Atlanta": "ATL", "Chicago": "ORD", "Los Ángeles": "LAX",
     "Nueva York": "JFK", "Dallas": "DFW", "Denver": "DEN", "Miami": "MIA",
     "San Francisco": "SFO", "Houston": "IAH", "Las Vegas": "LAS",
-    "Seattle": "SEA", "Boston": "BOS", "Orlando": "MCO",
+    "Seattle": "SEA", "Boston": "BOS", "Orlando": "MCO", "Phoenix": "PHX",
+    "Detroit": "DTW", "Filadelfia": "PHL", "Minneapolis": "MSP",
+    "Charlotte": "CLT", "Newark": "EWR", "Salt Lake City": "SLC",
+    "San Diego": "SAN", "Tampa": "TPA", "Washington": "IAD",
+    "Baltimore": "BWI", "Portland": "PDX", "Honolulu": "HNL",
 }

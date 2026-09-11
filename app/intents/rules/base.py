@@ -6,13 +6,9 @@ small helpers used by every implementation.
 import re
 from typing import Any, ClassVar, Protocol
 
-from app.intents.rules.number_words import MULTIPLIERS, find_number_words
+from app.intents.rules.digit_numbers import NUMBER_PATTERN, digit_value, find_digit_candidates
+from app.intents.rules.number_words import find_number_words
 
-_DIGIT_MULTIPLIER_ALTERNATION = "|".join(re.escape(word) for word in MULTIPLIERS)
-_NUMBER_PATTERN = re.compile(
-    rf"\b(?P<value>\d+(?:[.,]\d+)?)\s*(?P<multiplier>{_DIGIT_MULTIPLIER_ALTERNATION})?\b",
-    re.IGNORECASE,
-)
 _YEAR_PATTERN = re.compile(r"\b(19|20)\d{2}\b")
 _WORD_PATTERN = re.compile(r"[A-Za-zÁÉÍÓÚÑáéíóúñ]+")
 _MAX_KEYWORD_DISTANCE = 15
@@ -55,7 +51,7 @@ def find_number_near(text: str, keywords: tuple[str, ...]) -> float | None:
     word phrase that cannot be parsed is never a candidate, so it is never
     returned as a wrong guess.
     """
-    candidates = _digit_candidates(text) + _word_candidates(text)
+    candidates = find_digit_candidates(text) + _word_candidates(text)
     if not candidates:
         return None
     lowered = text.lower()
@@ -81,25 +77,13 @@ def parse_bare_number(text: str) -> float | None:
     stripped = text.strip()
     if not stripped:
         return None
-    digit_match = _NUMBER_PATTERN.fullmatch(stripped)
+    digit_match = NUMBER_PATTERN.fullmatch(stripped)
     if digit_match:
-        return _digit_value(digit_match)
+        return digit_value(digit_match)
     word_matches = find_number_words(stripped)
     if len(word_matches) == 1 and word_matches[0].span == (0, len(stripped)):
         return word_matches[0].value
     return None
-
-
-def _digit_value(match: re.Match[str]) -> float:
-    """Return one `_NUMBER_PATTERN` match's value, scaled by its multiplier."""
-    value = float(match.group("value").replace(",", "."))
-    multiplier = match.group("multiplier")
-    return value * MULTIPLIERS[multiplier.lower()] if multiplier else value
-
-
-def _digit_candidates(text: str) -> list[tuple[tuple[int, int], float]]:
-    """Return every digit-written number in `text`, scaled by its multiplier."""
-    return [(match.span(), _digit_value(match)) for match in _NUMBER_PATTERN.finditer(text)]
 
 
 def _word_candidates(text: str) -> list[tuple[tuple[int, int], float]]:

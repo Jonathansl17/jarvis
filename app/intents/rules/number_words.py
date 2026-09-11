@@ -33,6 +33,8 @@ MULTIPLIERS = {
     "mil": 1_000, "millon": 1_000_000, "millón": 1_000_000, "millones": 1_000_000,
 }
 _CONNECTOR = "y"
+_AMBIGUOUS_ARTICLE_UNO = "un"
+_AMBIGUOUS_ARTICLE_UNA = "una"
 
 _NUMBER_WORDS = {**_UNITS, **_TEENS, **_TENS, **_HUNDREDS}
 _VOCABULARY = sorted(set(_NUMBER_WORDS) | set(MULTIPLIERS) | {_CONNECTOR}, key=len, reverse=True)
@@ -69,7 +71,10 @@ def _parse_run(run: str) -> float | None:
     "cuarenta mil doscientos" reduces to 40_000 + 200.
     """
     words = [word.lower() for word in run.split() if word.lower() != _CONNECTOR]
-    if not words:
+    if not words or words == [_AMBIGUOUS_ARTICLE_UNO] or words == [_AMBIGUOUS_ARTICLE_UNA]:
+        # A bare "un"/"una" is almost always the Spanish indefinite article
+        # ("un carro"), not the cardinal number one, so it is dropped rather
+        # than guessed at, exactly like an unparsed fractional remainder.
         return None
     total, group = 0.0, 0.0
     for word in words:
