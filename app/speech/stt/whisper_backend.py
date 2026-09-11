@@ -4,6 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from faster_whisper import WhisperModel
 
+from app.constants import WHISPER_COMPUTE_TYPE
 from app.errors import SpeechRecognitionError
 
 
@@ -13,7 +14,7 @@ class WhisperSpeechToText:
     def __init__(self, model_size: str, language: str, device: str) -> None:
         self._language = language
         try:
-            self._model = WhisperModel(model_size, device=device)
+            self._model = WhisperModel(model_size, device=device, compute_type=WHISPER_COMPUTE_TYPE)
         except (OSError, ValueError) as exc:
             raise SpeechRecognitionError(f"Failed to load whisper model '{model_size}'") from exc
 

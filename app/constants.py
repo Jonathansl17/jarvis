@@ -67,6 +67,8 @@ STT_SAMPLE_RATE_HZ = 16000
 WHISPER_MODEL_SIZE = "small"
 WHISPER_LANGUAGE = "es"
 WHISPER_DEVICE = "cpu"
+# int8 runs faster on CPU and avoids the float16 conversion warning
+WHISPER_COMPUTE_TYPE = "int8"
 
 PIPER_VOICE_NAME = "es_MX-claude-high"
 PIPER_MODEL_FILE_SUFFIX = ".onnx"
