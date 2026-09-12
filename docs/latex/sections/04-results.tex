@@ -1,0 +1,185 @@
+\section{Analysis of results}
+\label{sec:results}
+
+\subsection{Model metrics}
+
+Tables~\ref{tab:forecast} to \ref{tab:recall} gather the metrics of the
+model kept in each notebook, next to the literal model built first when the
+two differ. Every figure is computed on rows the model never saw: a 25\,\%
+random test split for most notebooks, a chronological hold-out for the two
+series, and five-fold cross-validation for hepatitis, whose sick classes are
+too small for a single split.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{@{}llrrr@{}}
+    \toprule
+    Forecast & Window & MAE (USD) & RMSE (USD) & MAPE (\%) \\
+    \midrule
+    ARIMA(3,1,3) & 30 validation days & 210.7 & 246.6 & 8.4 \\
+    Naive (last price) & 30 validation days & 214.1 & 249.7 & 8.6 \\
+    ARIMA(3,1,3) & 7 unseen days, August 2017 & 236.1 & 282.1 & 7.6 \\
+    Naive (last price) & 7 unseen days, August 2017 & 233.2 & 284.9 & 7.5 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Bitcoin forecast against the naive forecast on the two hold-outs.}
+  \label{tab:forecast}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{@{}lLrrrl@{}}
+    \toprule
+    Model & Test rows & $R^2$ & MAE & RMSE & Units \\
+    \midrule
+    Car price, log model (kept) & 72 cars in range & 0.954 & 0.65 & 1.03 & lakhs \\
+    Car price, raw price & 72 cars in range & 0.807 & 1.23 & 2.11 & lakhs \\
+    Flight delay, schedule only (kept) & 50\,000 flights & 0.050 & 36.0 & 56.6 & minutes \\
+    Flight delay, with departure delay & 50\,000 flights & 0.952 & 8.9 & 12.7 & minutes \\
+    Avocado, random forest (kept) & 4\,563 random weeks & 0.898 & 0.091 & 0.128 & USD \\
+    Avocado, single tree, depth 10 & 4\,563 random weeks & 0.749 & 0.146 & 0.201 & USD \\
+    Avocado, random forest & 1\,296 weeks of 2018 & 0.410 & 0.188 & 0.235 & USD \\
+    Body fat, 3 predictors (kept) & 59 men & 0.583 & 3.87 & 4.64 & \% fat \\
+    Body fat, all 13 predictors & 59 men & 0.602 & 3.83 & 4.53 & \% fat \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Regression results. The avocado forest's out-of-bag $R^2$ is 0.893; the adjusted $R^2$ of the two body fat models is 0.561 and 0.487.}
+  \label{tab:regressions}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{@{}llrrrrr@{}}
+    \toprule
+    Model & Test rows & Acc. & Sens. & Spec. & Prec. & AUC \\
+    \midrule
+    Churn, MLP oversampled (kept) & 1\,761 customers & 0.755 & 0.745 & 0.759 & 0.527 & 0.831 \\
+    Churn, MLP as is & 1\,761 customers & 0.790 & 0.529 & 0.885 & 0.624 & 0.840 \\
+    Stroke, balanced logistic (kept) & 1\,278 people & 0.751 & 0.806 & 0.748 & 0.140 & 0.843 \\
+    Stroke, plain logistic & 1\,278 people & 0.952 & 0.032 & 0.999 & 0.667 & 0.845 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Binary classifiers at the 0.5 threshold.}
+  \label{tab:binary}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{@{}lLlrr@{}}
+    \toprule
+    Model & Question & Evaluated on & Acc. & Bal.\ acc. \\
+    \midrule
+    Wine, $k$-NN, $k=39$ (kept) & 3 bands & 1\,333 test wines & 0.589 & 0.547 \\
+    Wine, $k$-NN, $k=5$ & 7 scores & 1\,333 test wines & 0.513 & 0.230 \\
+    Cirrhosis, SVM (kept) & stage 4 or earlier & 103 test patients & 0.777 & 0.758 \\
+    Cirrhosis, SVM tuned & stages 1 to 4 & 103 test patients & 0.447 & 0.424 \\
+    Hepatitis, Gaussian NB, log labs (kept) & 4 categories & 608 people, 5-fold CV & 0.934 & 0.709 \\
+    Hepatitis, Gaussian NB, raw labs & 4 categories & 608 people, 5-fold CV & 0.914 & 0.653 \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Multi-class classifiers.}
+  \label{tab:multiclass}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    Kept model & Recall by class \\
+    \midrule
+    Wine, 3 bands & low 0.66, medium 0.63, high 0.35 \\
+    Cirrhosis, stage 4 or earlier & earlier stages 0.82, cirrhosis 0.69 \\
+    Hepatitis, 4 categories & donor 0.98, hepatitis 0.58, fibrosis 0.48, cirrhosis 0.80 \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Per-class recall of the kept multi-class models.}
+  \label{tab:recall}
+\end{table}
+
+\subsection{Reading the numbers}
+
+\paragraph{Three models are strong.}
+The car price model explains 95\,\% of the variance of the log price with
+an error of 0.65 lakhs, the avocado forest explains 90\,\% with an error of
+nine cents on a random split, and the hepatitis classifier tells a donor
+from a patient with a recall of 0.98. All three are recommended to the
+assistant without reservation inside the range of their training data.
+
+\paragraph{Four models are useful screens.}
+Churn (AUC 0.83), stroke (AUC 0.84), cirrhosis-or-not (balanced accuracy
+0.76) and body fat (error of 3.9 points) separate their classes or place a
+person in a broad band, and each notebook states the precision or the error
+that makes its answer a reason to look closer rather than a verdict. In
+every one of them the decision that mattered was not the estimator but the
+treatment of the imbalance or of the multicollinearity: balanced weights
+turned a stroke model that found 2 of 62 strokes into one that finds 50,
+oversampling did the same for churn, and dropping ten collinear
+circumferences made the body fat slopes readable at no measurable cost.
+
+\paragraph{Three models are honest negatives.}
+The ARIMA does not beat the naive forecast on either hold-out; the
+difference is three dollars on a price of 2\,500 and changes sign between
+the two windows, which is the result the flat autocorrelation announced:
+the daily return of bitcoin has no usable memory. The wine model misplaces
+four wines in ten because the laboratory sheet explains only part of a
+tasting score. The flight tree reaches an $R^2$ of 0.05 because the causes
+of delay are absent from the schedule. In all three the literal, accurate
+looking alternative (an ARIMA judged by its in-sample AIC, a tree that
+reads the departure delay) was built, shown, and rejected with the reason.
+The project treats reporting these outcomes as part of the scientific
+method rather than as failures to hide: the assistant tells the user the
+band around the bitcoin forecast, the band rather than the score for wine,
+and the 36-minute average error next to any delay.
+
+\paragraph{Evaluation design matters as much as the model.}
+The avocado forest drops from $R^2 = 0.90$ on a random split to $0.41$ on
+the weeks of 2018, because a random split of a set of time series lets the
+model interpolate between neighbouring weeks. The hepatitis model is scored
+by cross-validation because its sick classes have 21 to 30 people. The car
+and body fat models exclude test rows outside the training range, and the
+API carries that rule into production as a warning on every out-of-range
+request.
+
+\subsection{Application and API}
+
+All ten models are served by the API and reachable from the assistant by
+voice and by text; the repository ships three spoken sentences per model
+that resolve in a single turn with Gemini and also with the local rules.
+The rule-based parser is covered by 82 unit tests
+(\code{app/intents/rules/tests}) that pass on the current revision; they
+check that every shipped prompt resolves locally without Gemini and that the
+extractors of the car price and stroke models read numbers, dates, Spanish
+number words and synonyms correctly.
+
+The perception agents were validated by use rather than by a held-out set,
+since no labelled corpus of the team's faces or voices exists. Three
+observations from that use shaped the code. First, a USB webcam's first
+frames are nearly black while its exposure settles, so ten frames are
+discarded on open to avoid reporting ``no face''. Second, Whisper
+\emph{small} in int8 runs at usable latency on a laptop CPU, and it
+mishears the wake word in a handful of stable ways, which are now in the
+wake-word table. Third, with
+seven emotion classes the winning probability of a webcam frame is often
+below 0.5 and flips between neutral and a neighbour, so the emotion is
+sampled every two seconds rather than every frame, and only the winner
+drives the tone and the avatar.
+
+\subsection{Limitations and future work}
+
+The emotion classifier was reused from a previous course project and not
+retrained; its accuracy on FER-2013 was not re-measured here and its
+behaviour on the team's faces was only observed. A retraining on FER-2013
+with a held-out evaluation, or a lighter architecture, would let the
+notebook of that model join the other ten. The flight and wine models
+would need data that is not in their files (weather, tasters). The bitcoin
+model would need exogenous predictors to beat a random walk, and the
+literature suggests those gains are small. Whisper \emph{small} is a
+compromise between latency and accuracy on CPU; a GPU or the \emph{medium}
+model would cut mishearings. Finally, the Gemini parser depends on a
+free-tier quota, which is why the local rules exist and why the model chain
+skips exhausted models for the rest of the session.

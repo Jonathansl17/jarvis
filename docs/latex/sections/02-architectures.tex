@@ -1,0 +1,155 @@
+\section{Machine learning architectures}
+\label{sec:architectures}
+
+\subsection{System architecture}
+
+Figure~\ref{fig:pipeline} shows the path of one request. The application is
+split into three processes that share only files and HTTP: the notebooks
+produce the model bundles, the API serves them, and the desktop application
+consumes the API. Inside the application every stage is behind a protocol
+(an abstract interface), so the Whisper backend, the Piper backend, the ONNX
+emotion detector, the Gemini parser and the HTTP client are each
+replaceable without touching the orchestrator.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      x=3.1cm, y=1.9cm,
+      every node/.style={font=\small},
+      box/.style={draw, rounded corners, align=center, minimum height=1.15cm, text width=2.7cm},
+      ml/.style={box, fill=blue!8},
+      io/.style={box, fill=gray!10},
+      arr/.style={-{Latex[length=2mm]}, thick},
+    ]
+    \node[io] (mic) at (0,2) {Microphone\\ \scriptsize sounddevice, 16 kHz};
+    \node[ml] (stt) at (1,2) {Speech-to-text\\ \scriptsize Whisper \emph{small}, int8};
+    \node[box] (wake) at (2,2) {Wake word\\ \scriptsize \emph{JarvisTEC} + mishearings};
+    \node[ml] (intent) at (3,2) {Intent parser\\ \scriptsize Gemini $\to$ rules};
+    \node[box] (api) at (3,1) {REST API\\ \scriptsize FastAPI, \code{/predict}};
+    \node[ml] (models) at (4,1) {10 models\\ \scriptsize joblib bundles};
+    \node[box] (reply) at (2,1) {Reply builder\\ \scriptsize template per model};
+    \node[box] (tone) at (1,1) {Tone adapter\\ \scriptsize prefix/suffix};
+    \node[ml] (tts) at (0,1) {Text-to-speech\\ \scriptsize Piper es\_MX};
+    \node[io] (cam) at (0,0) {Webcam\\ \scriptsize OpenCV, $\sim$15 fps};
+    \node[box] (face) at (1,0) {Face locator\\ \scriptsize Haar cascade};
+    \node[ml] (emo) at (2,0) {Emotion CNN\\ \scriptsize ONNX, 48$\times$48, 7 classes};
+    \node[box] (avatar) at (3,0) {Avatar\\ \scriptsize expression per emotion};
+
+    \draw[arr] (mic) -- (stt);
+    \draw[arr] (stt) -- (wake);
+    \draw[arr] (wake) -- (intent);
+    \draw[arr] (intent) -- (api);
+    \draw[arr, <->] (api) -- (models);
+    \draw[arr] (api) -- (reply);
+    \draw[arr] (reply) -- (tone);
+    \draw[arr] (tone) -- (tts);
+    \draw[arr] (cam) -- (face);
+    \draw[arr] (face) -- (emo);
+    \draw[arr] (emo) -- (avatar);
+    \draw[arr] (emo.north) -- ++(0,0.22) -| (tone.south);
+  \end{tikzpicture}
+  \caption{One request through \jarvis{}. Shaded boxes are learned models. Typed text enters at the wake-word stage and follows the same path.}
+  \label{fig:pipeline}
+\end{figure}
+
+\subsection{Perception agents}
+
+\paragraph{Facial emotion agent.}
+Every 2 seconds the camera worker takes the current frame, converts it to
+grayscale and runs the Viola--Jones Haar cascade
+(\code{haarcascade\_frontalface\_alt}) to locate the largest frontal face,
+rejecting boxes under $60\times60$ pixels to avoid glare and texture
+patches. The crop is resized to $48\times48$, scaled to $[0,1]$ and fed to a
+VGG-style convolutional network: five blocks of
+$3\times3$ convolutions with ReLU (64, 128, 256, 512 and 512 filters, two or
+three convolutions per block), each block closed by batch normalisation and
+$2\times2$ max pooling, then a dense layer of 128 units with dropout 0.2 and
+a softmax over the seven classes. The network was trained on FER-2013 and reused from an earlier course project; for this
+project the Keras weights were exported once to ONNX so that inference runs
+with \code{onnxruntime} on the CPU with two threads and does not starve the
+interface. The winning class always drives the avatar and the tone; with
+seven classes a webcam reading rarely exceeds 50\,\% probability, so the
+confidence is shown for information only. The reading is repeated every two
+seconds and the face box is redrawn on every frame in between.
+
+\paragraph{Speech agent.}
+\code{Ctrl+Space} or the microphone button opens a 16\,kHz mono recording;
+pressing again closes it. The audio goes to Whisper \emph{small} through \code{faster-whisper} (CTranslate2), loaded
+in int8 on the CPU with Spanish fixed as the language. The transcript then
+follows exactly the same path as typed text: wake-word check, intent
+parsing, prediction, reply. Whisper's typical mishearings of the wake word
+are part of the wake-word table, and the Gemini prompt is told the text may
+come from speech so it can recover \emph{días} from \emph{dientes}.
+
+\paragraph{Intent parser.}
+The parser turns a Spanish sentence into
+\code{(model\_name, fields, missing)}. With a key configured, Gemini is asked
+for a JSON object under a system instruction that carries the catalogue of
+the ten models (a one-line description, Spanish synonyms and per-model
+inference rules) and the JSON schema of every request body, which the
+application reads from the API's OpenAPI document at startup. Models are
+tried in a chain and a model whose quota is exhausted (429) or that was
+retired (404) is skipped for the rest of the session. Without a key, or on
+any Gemini failure, a rule-based parser with one field extractor per model
+(keyword lookup tables, Spanish number words, dates, airline and city codes)
+produces the same structure. Whichever parser answered is shown in the
+status strip.
+
+\paragraph{Dialogue.}
+The orchestrator records the turn, resolves the intent against the pending
+one (so an answer to ``which airline?'' completes the flight request from
+the previous turn), asks for the next missing required field if any, or
+posts the request body to the API and renders the answer through a per-model
+reply template. The tone adapter wraps the text according to the last
+emotion, and the speaking worker synthesises it with Piper
+(\code{es\_MX-claude-high}, 22\,kHz). Starting a new recording interrupts the
+voice.
+
+\subsection{The ten models}
+
+Table~\ref{tab:models} lists the ten problems, their datasets, the technique
+required by the course for each and the target. Each one is developed in
+its own notebook with the six CRISP-DM phases: problem
+analysis, data understanding, exploration and preparation, modelling,
+evaluation and deployment (the saved bundle plus a reload test). Every
+notebook builds the literal model the task asks for first, and when the data
+call for a deviation (a logarithm, a regrouped target, a balanced class
+weight) that second model is built next to it and the choice is defended
+with the metrics of both.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{@{}c>{\ttfamily}lLLL@{}}
+    \toprule
+    \# & Notebook & Dataset (source) & Technique & Target \\
+    \midrule
+    1 & bitcoin\_price\_regression & Bitcoin daily prices 2013--2017 (Kaggle, team-ai) & ARIMA & closing price, next days \\
+    2 & car\_price\_regression & 301 used cars, India (Kharwal) & multiple linear regression & selling price (lakhs) \\
+    3 & telecom\_churn\_classification & IBM Telco churn, 7\,043 customers & neural network (MLP) & churn yes/no \\
+    4 & wine\_quality\_classification & Vinho verde, 6\,497 wines & $k$ nearest neighbours & quality band \\
+    5 & flight\_delay\_regression & BTS airline delays 2008, 1.9\,M flights & decision tree & arrival delay (min) \\
+    6 & stroke\_classification & Stroke prediction, 5\,110 people (fedesoriano) & logistic regression & stroke yes/no \\
+    7 & cirrhosis\_type\_classification & Mayo PBC trial, 418 patients & support vector machine & cirrhosis stage \\
+    8 & avocado\_price\_regression & Hass Avocado Board retail scans 2015--2018 & random forest & average price (USD) \\
+    9 & hepatitis\_type\_classification & HCV blood panels, 615 people & Gaussian naive Bayes & donor / hepatitis / fibrosis / cirrhosis \\
+    10 & body\_fat\_regression & 252 men & multiple linear regression & body fat (\%) \\
+    \bottomrule
+  \end{tabularx}
+  \caption{The ten models, in the order of the repository. All datasets are downloaded by the notebooks through \code{kagglehub} or a public URL.}
+  \label{tab:models}
+\end{table}
+
+\subsection{Serving architecture}
+
+The API is a FastAPI service with one adapter per model. Each adapter knows
+how to turn a validated request body into the row the estimator expects
+(filling optional fields with the notebook's fill value, applying the
+notebook's encodings and transformations) and how to turn the estimator's
+output into the response (label, probability and threshold for classifiers;
+value and units for regressions; a list of \code{\{date, price, lower,
+upper\}} for the forecast). Requests are validated by Pydantic schemas that
+mirror the notebook's predictor list, and regressions attach a warning when
+an input falls outside the training range, since a fitted line has no
+information beyond it. Endpoints, request bodies and example calls are listed
+in Appendix~\ref{app:api}.

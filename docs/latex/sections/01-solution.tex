@@ -1,0 +1,117 @@
+\section{Proposed solution}
+\label{sec:solution}
+
+\subsection{Problem statement}
+
+The project asks for a personal assistant that hears the user, reads the
+user's face, and answers questions about a set of machine learning problems.
+Its scope has four deliverables: an agent that recognises the emotion of the
+person from a live camera frame, an agent that turns speech into text and
+executes the instruction, at least ten machine learning models chosen from
+the list of the course, and a set of spoken commands that run those models.
+The models are served by a REST API, and the user talks to them through a
+desktop application.
+
+\jarvis{} is the answer to that statement. It is a Spanish-speaking desktop
+assistant in which every request follows one path: the microphone records
+the user, a speech-to-text model transcribes the audio, an intent parser
+decides which of the ten models the sentence refers to and which values it
+carries, the REST API runs that model, and the reply is written and spoken
+back in a tone that depends on the emotion the webcam read on the user's
+face. An animated penguin avatar changes its expression with that emotion.
+
+\subsection{Design decisions}
+
+Three decisions shape the solution and are defended here rather than in the
+code.
+
+\paragraph{Everything runs locally.}
+The statement allows cloud services from Google or Azure for face and speech
+recognition in the first delivery. \jarvis{} does not depend on them: the
+emotion classifier is a convolutional network exported to ONNX and run with
+\code{onnxruntime} on the CPU, speech-to-text is Whisper
+through \code{faster-whisper}, and text-to-speech is Piper with a Mexican
+Spanish voice. The only optional cloud call is to Gemini for intent parsing,
+and when no key is configured a rule-based parser takes over with the same
+contract, so the assistant works offline end to end. This makes the demo
+independent of quotas, network and billing, and keeps the user's camera
+frames and voice on the machine.
+
+\paragraph{Ten models, one contract.}
+Each model is a CRISP-DM notebook that ends by writing a
+\code{joblib} bundle with the estimator and everything the API needs to feed
+it without retraining: the predictor list, encodings, fill values for
+missing inputs, thresholds, class names and training ranges. The API loads
+the bundles once at startup and exposes them behind one endpoint shape,
+\code{POST /predict/\{model\_name\}}. The application never touches an
+estimator; it only speaks JSON. Adding an eleventh model is a notebook, an
+adapter and a schema, and the assistant discovers the new schema at startup.
+
+\paragraph{The emotion changes how the answer is said, not what it says.}
+The classifier returns one of seven emotions (angry, disgust, fear, happy,
+sad, surprise, neutral), the vocabulary of the FER-2013 challenge, which in turn follows Ekman's basic emotions. The prediction of the model is computed first and is
+identical whatever the face shows; a tone table then wraps it in a prefix
+and a suffix (calm and short for an angry user, cheerful for a happy one).
+This keeps the machine learning answer auditable and confines the affective
+layer to phrasing.
+
+\subsection{Commands}
+
+The assistant wakes on the word \emph{JarvisTEC} (and the mishearings
+Whisper produces for it, such as \emph{Yarvis} or \emph{Yalvis}, all matched on
+a word boundary). One sentence per model is enough when it carries every
+value the model needs; when a required value is missing the assistant asks
+for it and keeps the pending intent across turns. Three example sentences
+per model, in Spanish, ship with the application in \code{app/prompts.txt};
+Table~\ref{tab:commands} gives one per model.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    Model & Example command (Spanish, as spoken) \\
+    \midrule
+    Bitcoin & \emph{JarvisTEC, ¿cuánto va a costar el bitcoin mañana?} \\
+    Car price & \emph{JarvisTEC, ¿cuánto vale un carro diesel del 2015 que nuevo costó 10 lakhs, tiene 40 mil kilómetros, un solo dueño, lo vende una agencia y es manual?} \\
+    Churn & \emph{JarvisTEC, ¿se va a ir un cliente hombre \ldots contrato mes a mes, factura electrónica, paga con cheque electrónico, lleva 3 meses y paga 95 dólares al mes?} \\
+    Wine & \emph{JarvisTEC, ¿qué calidad tiene un vino blanco con 13.5 de alcohol, densidad 0.99, \ldots y 2 de azúcar residual?} \\
+    Flight delay & \emph{JarvisTEC, ¿cuánto se va a retrasar el vuelo de American Airlines de Dallas a Chicago el lunes 15 de enero a las 12 del mediodía, con 802 millas?} \\
+    Stroke & \emph{JarvisTEC, ¿qué riesgo de derrame tiene un hombre de 68 años, hipertenso, \ldots con glucosa de 140, índice de masa corporal 31 y que dejó de fumar?} \\
+    Cirrhosis & \emph{JarvisTEC, ¿tiene cirrosis una mujer de 55 años sin edema, sin ascitis, con hepatomegalia, \ldots plaquetas 200 y protrombina 11?} \\
+    Avocado & \emph{JarvisTEC, ¿a cuánto estaría el aguacate orgánico en San Francisco el 10 de septiembre de 2017 con un volumen total de 20 mil \ldots?} \\
+    Hepatitis C & \emph{JarvisTEC, ¿qué categoría de hepatitis tiene un hombre de 45 años con albúmina 38, fosfatasa alcalina 60, ALT 30, AST 90, \ldots y proteínas 70?} \\
+    Body fat & \emph{JarvisTEC, ¿cuál es mi porcentaje de grasa corporal si mi abdomen mide 90 centímetros, peso 175 libras y mi muñeca mide 18 centímetros?} \\
+    \bottomrule
+  \end{tabularx}
+  \caption{One spoken command per model. The full set, three per model, is in \code{app/prompts.txt}.}
+  \label{tab:commands}
+\end{table}
+
+\subsection{User interface}
+
+The window (Figure~\ref{fig:ui}) has the avatar and the camera card on the
+left and the conversation on the right. The camera card shows the mirrored
+webcam feed with the detected face boxed and the emotion and its confidence
+written under it. The input row has a single button that is the microphone
+while the entry is empty, the send arrow once there is text, and a red
+recording indicator while the microphone is open. A status strip at the
+bottom reports the microphone, the emotion detector, the API, the
+speech-to-text engine and which parser answered (a Gemini model or the
+rules). System notices never enter the chat.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[
+      every node/.style={font=\small},
+      card/.style={draw, rounded corners, text width=3.6cm, align=center},
+    ]
+    \node[card, minimum height=3.2cm] (avatar) {Penguin avatar\\ \scriptsize idle / listening / thinking / speaking, one expression per emotion};
+    \node[card, minimum height=1.6cm, below=0.3cm of avatar] (camera) {Camera card\\ \scriptsize face box + emotion label, ON/OFF};
+    \node[card, text width=4.6cm, minimum height=3.9cm, anchor=north west] (chat) at ([xshift=0.5cm]avatar.north east) {Conversation\\ \scriptsize one bubble per turn};
+    \node[card, text width=4.6cm, minimum height=0.9cm, below=0.3cm of chat] (input) {Entry + MIC / send button};
+    \node[card, text width=8.9cm, minimum height=0.8cm, anchor=north west] (status) at ([yshift=-0.3cm]camera.south west) {Status strip: MIC \; EMO \; API \; STT \; IA};
+  \end{tikzpicture}
+  \caption{Layout of the \jarvis{} window. \code{Enter} sends typed text, \code{Ctrl+Space} toggles recording, \code{Ctrl+E} toggles the webcam, \code{Esc} quits.}
+  \label{fig:ui}
+\end{figure}

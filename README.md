@@ -14,6 +14,7 @@ notebooks/   one folder per model, each with its executed CRISP-DM notebook
 models/      one .joblib bundle per model, written by the notebooks, read by the API
 api/         FastAPI service, one endpoint per model
 app/         JarvisTEC desktop assistant (CustomTkinter, whisper, Piper, OpenCV)
+docs/        project report (LaTeX; sources in docs/latex, `cd docs/latex && latexmk` writes docs/documentacion.pdf)
 ```
 
 | # | Notebook | Technique | Target |

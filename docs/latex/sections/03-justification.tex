@@ -1,0 +1,244 @@
+\section{Justification and explanation of the models}
+\label{sec:justification}
+
+Each subsection says what the model is asked, why the technique fits, what
+had to be done to the data, and which of the models built in the notebook
+was kept and why. The numbers are the ones printed by the executed
+notebooks in the repository.
+
+\subsection{Bitcoin price: ARIMA}
+
+\paragraph{The question.} What will bitcoin cost in the next few days?
+
+\paragraph{Why ARIMA.} There are no predictors here, only the history of
+the price, and ARIMA is the technique of the course for forecasting a
+series from its own past.
+
+\paragraph{What the data needed.} The price grew twenty-fold over the four
+years, and its daily jumps grew with it: a 10\,\% move was 20 dollars in 2015
+and 250 in 2017. ARIMA needs a series with a stable mean and a stable
+spread, so two steps were taken. Taking the logarithm makes the spread
+stable, because it turns dollar changes into percentage changes. Taking
+the difference between one day and the next removes the trend. After those
+two steps the statistical test for stationarity passes.
+
+\paragraph{What the model found.} The daily percentage change of bitcoin
+has almost no memory: knowing today's change says almost nothing about
+tomorrow's. That is what economists call a random walk, and it means the
+best guess for tomorrow is roughly today's price. The notebook tried
+sixteen ARIMA orders and kept the one with the best AIC score,
+ARIMA(3,1,3), but none of its coefficients is statistically different from
+zero, so it is really a random walk with a few small extra terms.
+
+\paragraph{What is kept.} The ARIMA is kept because, unlike a plain
+``same as today'' answer, it gives a range around the forecast that widens
+with the horizon. The assistant reads out the number and the range, and
+Section~\ref{sec:results} shows honestly that the number itself is no
+better than repeating the last price.
+
+\subsection{Used car price: multiple linear regression}
+
+\paragraph{The question.} How much does a used car sell for, given its
+showroom price, year, mileage, fuel, seller and transmission?
+
+\paragraph{Why linear regression.} A dealer wants to know how much each
+fact is worth, for example how much a year of age costs. A linear
+regression gives exactly that: one coefficient per fact, in units of
+price.
+
+\paragraph{What the data needed.} Most cars are cheap and a few are very
+expensive, so prices are lopsided. Fitting the price directly, the model
+gets the expensive cars badly wrong and its errors grow with the price.
+Fitting the logarithm of the price instead, with the logarithm of the
+showroom price and of the mileage, fixes that; the coefficients then read
+as percentages, which is the natural way to talk about depreciation.
+
+\paragraph{What is kept.} The logarithmic model, with an $R^2$ of 0.954
+against 0.807 for the direct model and half the error. Cars outside the
+range seen in training (a much more expensive or much older car) are not
+predicted, because a straight line knows nothing beyond its data. The
+coefficient for CNG rests on two cars and is reported as unknown.
+
+\subsection{Telecom churn: neural network}
+
+\paragraph{The question.} Will this customer cancel the service?
+
+\paragraph{Why a neural network.} A multilayer perceptron can combine the
+30 facts about a customer (contract, services, bill, tenure) in ways a
+straight line cannot. The network has two hidden layers of 32 and 16
+neurons and one output neuron that gives a probability.
+
+\paragraph{What the data needed.} Only about one customer in four leaves,
+so a network trained on the data as they are learns to say ``stays'' most
+of the time: it reaches 79\,\% accuracy but catches only half of the
+customers who leave. Copying the leavers in the training set until they
+are as many as the stayers (oversampling) fixes the bias.
+
+\paragraph{What is kept.} The oversampled network. It finds three out of
+four leavers instead of one in two, at the cost of more false alarms.
+Since a retention call is cheap and a lost customer is expensive, that is
+the right trade. The notebook also notes that a simple logistic regression
+does about as well on this data, which means churn here depends on facts
+that act one at a time (contract type, tenure, payment method) rather than
+on complicated combinations.
+
+\subsection{Wine quality: $k$ nearest neighbours}
+
+\paragraph{The question.} How good is a wine, from its laboratory sheet?
+
+\paragraph{Why $k$-NN.} It needs no equation: to score a new wine it looks
+up the $k$ most similar wines in the training set and takes the most common
+score among them.
+
+\paragraph{What the data needed.} ``Similar'' means close in every
+measurement, but the measurements use very different scales (sulphur
+dioxide in the hundreds, density around 1). Without putting them on the
+same scale the distance is decided by sulphur dioxide alone, so every
+measurement was standardised. The second problem is the target: scores go
+from 3 to 9 but almost every wine is a 5, 6 or 7, and a vote among
+neighbours never picks the rare scores. Grouping the scores into low,
+medium and high gives every class enough wines to win a vote.
+
+\paragraph{What is kept.} The three-band model with $k = 39$. It gets the
+band right 59\,\% of the time, against 44\,\% for always answering
+``medium'', and its mistakes are between neighbouring bands. The honest
+reading is that the laboratory sheet explains only part of what tasters
+score, so the assistant gives a band, not a number.
+
+\subsection{Flight delay: decision tree}
+
+\paragraph{The question.} How late will this flight arrive?
+
+\paragraph{Why a decision tree.} A tree asks a chain of yes/no questions
+(``does it depart after 5 pm?'', ``is it this airline?'') and predicts the
+average delay of the flights that answered the same way. Its rules can be
+read, so the assistant could explain why it expects a delay.
+
+\paragraph{What the data needed.} The file contains the departure delay
+of every flight. A tree that reads it predicts the arrival delay almost
+perfectly ($R^2$ of 0.95), but that is cheating: if you already know the
+plane left forty minutes late you do not need a model. The honest tree only
+reads what is known before leaving home: airline, route, month, weekday,
+scheduled hour and distance.
+
+\paragraph{What is kept.} The honest tree, with an $R^2$ of 0.05 and an
+average error of 36 minutes. The notebook says plainly that this is a weak
+model, and explains why: delays come from weather, breakdowns, late
+inbound aircraft and airport congestion, none of which is in the schedule.
+The assistant gives the expected delay together with that error.
+
+\subsection{Stroke risk: logistic regression}
+
+\paragraph{The question.} Is this person at risk of a stroke?
+
+\paragraph{Why logistic regression.} It turns a set of facts (age, blood
+pressure, heart disease, glucose, body mass, smoking) into a probability
+between 0 and 1, and a threshold on that probability gives a yes or no.
+
+\paragraph{What the data needed.} Only 1 person in 20 in the file had a
+stroke. Trained as is, the model says ``no'' to almost everyone: 95\,\%
+accuracy, but it finds 2 strokes out of 62. For a screening tool that is
+useless. Telling the model that a missed stroke weighs as much as the
+nineteen healthy people it is outnumbered by (balanced class weights)
+fixes it.
+
+\paragraph{What is kept.} The balanced model. It finds 50 of the 62
+strokes, at the cost of sending about 300 healthy people out of 1\,216 to a
+check-up. Age matters five times more than any other fact. Because only
+about one positive in seven is a real stroke, the assistant presents a
+positive answer as a reason to see a doctor, never as a diagnosis.
+
+\subsection{Cirrhosis stage: support vector machine}
+
+\paragraph{The question.} How advanced is this patient's liver disease,
+from blood tests and physical signs, without a biopsy?
+
+\paragraph{Why an SVM.} It draws the boundary between classes that leaves
+the widest gap on each side, and with the radial kernel that boundary can
+curve. Because it measures distances between patients, all the tests had to
+be put on the same scale first, and its two settings ($C$ and $\gamma$)
+were chosen by cross-validation.
+
+\paragraph{What the model found.} Telling apart the four stages is not
+possible from these data: stages 2 and 3 have the same typical values on
+almost every test, and no setting of the model got above 45\,\% balanced
+accuracy. What the tests do show is whether the patient has reached
+cirrhosis (stage 4) or not.
+
+\paragraph{What is kept.} The two-class model, cirrhosis or earlier, right
+about three times in four. The four-stage model is saved next to it so the
+API can still answer with a stage, with its limitation attached. The data
+come from a clinical trial of the 1970s and 1980s, mostly women, so the
+model is a screen, not a diagnosis.
+
+\subsection{Avocado price: random forest}
+
+\paragraph{The question.} What will an avocado cost in a given city, for
+a given type (organic or conventional) and week?
+
+\paragraph{Why a random forest.} A single decision tree memorises its
+training data: grown without limits it is perfect on the rows it saw and
+much worse on new ones. A forest grows hundreds of trees on random
+samples and averages them, which keeps what the trees learn and cancels
+what they memorise.
+
+\paragraph{What the model found.} The forest of 200 trees explains 90\,\%
+of the price with an average error of nine cents, against 80\,\% for the
+best single tree. The type of avocado is by far the most important fact
+(organic costs about half a dollar more), followed by the quantities sold
+and the season.
+
+\paragraph{What is kept.} The forest, with one warning. Trained on
+2015--2017 and asked about 2018, it explains only 41\,\% of the price,
+because a forest cannot guess a year it has never seen. So it is used to
+look up the expected price for a region, type and season, not to forecast
+next year.
+
+\subsection{Hepatitis C category: naive Bayes}
+
+\paragraph{The question.} Does this blood panel look like a healthy
+donor, hepatitis, fibrosis or cirrhosis?
+
+\paragraph{Why naive Bayes.} It computes, for each category, how likely
+the observed lab values are, and picks the most likely category. It works
+well with few examples, which matters here: the file has 533 donors but
+only 24, 21 and 30 sick patients.
+
+\paragraph{What the data needed.} The Gaussian version assumes each lab
+value follows a bell curve within each category. Liver enzymes do not:
+most values are small and a few are huge. Taking the logarithm of every
+lab value makes them bell-shaped and raises the balanced accuracy from
+0.65 to 0.71.
+
+\paragraph{What is kept.} The logarithmic model. It separates donors from
+patients almost perfectly and recognises cirrhosis four times out of five,
+but it confuses hepatitis and fibrosis with each other about half the
+time, so the assistant reads either of those as ``early liver disease''.
+Because the sick groups are so small, the numbers come from five-fold
+cross-validation rather than a single test set.
+
+\subsection{Body fat: multiple linear regression}
+
+\paragraph{The question.} What is a person's body fat percentage, from
+measurements taken with a tape and a scale?
+
+\paragraph{Why linear regression.} The reference method (underwater
+weighing) is expensive; a formula with a few readable coefficients is what
+a trainer can actually use.
+
+\paragraph{What the data needed.} The file has thirteen measurements, but
+they mostly say the same thing: a bigger man has a bigger chest, waist,
+hip and thigh, all at once. When predictors repeat each other, a
+regression cannot decide how to share the effect between them and its
+coefficients become meaningless, some even with the wrong sign. The
+\code{Density} column was dropped because the target is computed from it.
+Two impossible rows (a man 75 centimetres tall, a body fat of exactly 0)
+were removed.
+
+\paragraph{What is kept.} A model with three measurements: abdomen,
+weight and wrist. It is as accurate as the model with all thirteen
+(average error of 3.9 points of fat against 3.8, on a test set too small to
+tell the difference) and its three coefficients can be read and trusted.
+The limitation is the error itself: a man predicted at 20\,\% may be at 16
+or 24, enough to place him in a broad category but not to follow a diet
+week by week.

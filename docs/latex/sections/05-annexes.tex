@@ -1,0 +1,132 @@
+\section{Repository and reproduction}
+\label{app:repo}
+
+The repository is at \url{https://github.com/Jonathansl17/jarvis}. Its
+layout:
+
+\begin{lstlisting}
+notebooks/   one folder per model, each with its executed CRISP-DM notebook
+models/      one .joblib bundle per model, written by the notebooks, read by the API
+             plus facial_emotion_cnn.onnx and haarcascade_frontalface_alt.xml
+api/         FastAPI service, one adapter and one schema per model
+app/         JarvisTEC desktop assistant (CustomTkinter, whisper, Piper, OpenCV)
+docs/        this document (LaTeX)
+\end{lstlisting}
+
+\paragraph{Notebooks.}
+Every notebook downloads its dataset with \code{kagglehub} or from a public
+URL, so it runs unchanged in Google Colab and locally, and its last cells
+write \code{models/<name>.joblib} and reload it for a sanity prediction.
+
+\begin{lstlisting}[language=bash]
+python3 -m venv env && source env/bin/activate
+pip install -r notebooks/requirements.txt
+jupyter notebook notebooks/
+\end{lstlisting}
+
+\paragraph{API.}
+\begin{lstlisting}[language=bash]
+pip install -r api/requirements.txt
+cd api && uvicorn app.main:app --host 0.0.0.0 --port 8000
+\end{lstlisting}
+Interactive documentation at \url{http://localhost:8000/docs}. Configuration
+through the environment variables \code{MODELS\_DIR}, \code{HOST} and
+\code{PORT}.
+
+\paragraph{Application.}
+\begin{lstlisting}[language=bash]
+pip install -r app/requirements.txt
+cp app/.env.example app/.env     # optional GEMINI_API_KEY, API_BASE_URL
+python -m app                    # with the API running
+\end{lstlisting}
+The first run downloads Whisper \emph{small} (about 500\,MB) and the Spanish
+Piper voice (about 60\,MB). Other variables: \code{GEMINI\_MODELS},
+\code{MODELS\_DIR}, \code{PIPER\_CACHE\_DIR}, \code{CAMERA\_ENABLED},
+\code{TTS\_ENABLED}. The same steps work on Windows with \code{py -m venv env}
+and \code{env\textbackslash Scripts\textbackslash activate}.
+
+\paragraph{Tests.}
+\begin{lstlisting}[language=bash]
+python -m unittest discover -s app -p "test_*.py" -t .
+\end{lstlisting}
+
+\section{REST API}
+\label{app:api}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{@{}llL@{}}
+    \toprule
+    Method & Path & Purpose \\
+    \midrule
+    GET & \code{/health} & liveness, no model lookup \\
+    GET & \code{/models} & names of the loaded models \\
+    GET & \code{/models/\{model\_name\}/schema} & JSON schema of that model's request body \\
+    POST & \code{/predict/\{model\_name\}} & runs one model on a JSON body \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Endpoints of the API.}
+\end{table}
+
+Optional fields (\code{null} or omitted) are filled with the value the
+notebook used for missing data. Classifiers answer with \code{label},
+\code{probability} and the \code{threshold} applied; regressions answer with
+the predicted value in the units of the notebook and \code{meta.warnings}
+when an input falls outside the training range; bitcoin answers with a list
+of \code{\{date, price, lower, upper\}}. Example calls:
+
+\begin{lstlisting}[language=bash]
+curl -X POST localhost:8000/predict/car_price_regression \
+  -H 'content-type: application/json' -d '{
+  "present_price": 10, "year": 2015, "kms_driven": 40000, "owner": 0,
+  "fuel_type": "Diesel", "seller_type": "Dealer", "transmission": "Manual"}'
+
+curl -X POST localhost:8000/predict/body_fat_regression \
+  -H 'content-type: application/json' -d '{"abdomen": 90, "weight": 175, "wrist": 18}'
+
+curl -X POST localhost:8000/predict/stroke_classification \
+  -H 'content-type: application/json' -d '{
+  "gender": "Male", "age": 68, "hypertension": true, "heart_disease": false,
+  "ever_married": "Yes", "work_type": "Private", "Residence_type": "Urban",
+  "avg_glucose_level": 140, "bmi": 31, "smoking_status": "formerly smoked"}'
+
+curl -X POST localhost:8000/predict/hepatitis_type_classification \
+  -H 'content-type: application/json' -d '{
+  "age": 45, "sex": "m", "ALB": 38, "ALP": 60, "ALT": 30, "AST": 90, "BIL": 30,
+  "CHE": 5, "CHOL": 4, "CREA": 80, "GGT": 120, "PROT": 70}'
+
+curl -X POST localhost:8000/predict/wine_quality_classification \
+  -H 'content-type: application/json' -d '{
+  "type": "white", "alcohol": 13.5, "density": 0.99, "free_sulfur_dioxide": 30,
+  "total_sulfur_dioxide": 120, "volatile_acidity": 0.25, "residual_sugar": 2}'
+
+curl -X POST localhost:8000/predict/flight_delay_regression \
+  -H 'content-type: application/json' -d '{
+  "month": 12, "day_of_month": 19, "day_of_week": 5, "dep_hour": 18,
+  "carrier": "AA", "origin": "ORD", "dest": "LAX", "distance": 1745}'
+
+curl -X POST localhost:8000/predict/bitcoin_price_regression \
+  -H 'content-type: application/json' -d '{"days": 7}'
+\end{lstlisting}
+
+\section{Software stack}
+\label{app:stack}
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{@{}lL@{}}
+    \toprule
+    Component & Library and version \\
+    \midrule
+    Notebooks & pandas 3.0.5, scikit-learn 1.9.1, statsmodels 0.15.0, matplotlib 3.11.1, seaborn 0.13.2, kagglehub 1.0.2, joblib 1.6.0 \\
+    API & FastAPI 0.141.1, uvicorn 0.52.4, pydantic-settings 2.15.0 \\
+    Application & CustomTkinter 6.0.0, faster-whisper 1.2.1, piper-tts 1.8.0, onnxruntime 1.30.0, opencv-python-headless 4.14.0, sounddevice 0.5.6, httpx 0.28.1, google-genai 2.23.0 \\
+    Emotion model & VGG-style CNN, Keras weights exported to ONNX; Haar cascade \code{frontalface\_alt} from OpenCV \\
+    Speech & Whisper \emph{small}, int8, CTranslate2; Piper voice \code{es\_MX-claude-high} \\
+    Intent parsing & Gemini (\code{gemini-3.6-flash}, then \code{gemini-flash-lite-latest}) with a rule-based fallback \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Versions pinned in the three \code{requirements.txt} files.}
+\end{table}

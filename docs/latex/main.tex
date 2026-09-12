@@ -1,0 +1,54 @@
+% JarvisTEC — project report. Compile with pdflatex + bibtex (Overleaf default).
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+\usepackage[hidelinks]{hyperref}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  backgroundcolor=\color{gray!8},
+}
+
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\jarvis}{JarvisTEC}
+
+\title{\jarvis{}: a voice and vision assistant over ten machine learning models}
+
+\begin{document}
+
+\input{sections/00-cover}
+\tableofcontents
+\clearpage
+
+\input{sections/01-solution}
+\input{sections/02-architectures}
+\input{sections/03-justification}
+\input{sections/04-results}
+
+\clearpage
+\appendix
+\input{sections/05-annexes}
+
+\end{document}
