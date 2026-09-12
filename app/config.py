@@ -1,4 +1,8 @@
-"""Process configuration, read once from the environment or `app/.env`."""
+"""Process configuration, read once from the environment or `app/.env`.
+
+Empty values (`VAR=`) count as unset, so `app/.env.example` can be copied
+verbatim and every blank line falls back to its default.
+"""
 
 from functools import lru_cache
 from pathlib import Path
@@ -37,7 +41,9 @@ class Settings(BaseSettings):
     synthesis be turned off (e.g. for headless runs or automated tests).
     """
 
-    model_config = SettingsConfigDict(env_file=_ENV_FILE_PATH, extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=_ENV_FILE_PATH, env_ignore_empty=True, extra="ignore"
+    )
 
     gemini_api_key: str | None = Field(default=None, validation_alias=GEMINI_API_KEY_ENV_VAR)
     gemini_models: tuple[str, ...] = Field(

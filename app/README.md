@@ -35,7 +35,7 @@ The API in `api/` must be running at `API_BASE_URL` (default
 ## Configuration
 
 Read once at startup by `app/config.py` (`pydantic-settings`) from `app/.env`
-or the environment:
+or the environment (`app/.env.example` is a starting point for `app/.env`):
 
 - `GEMINI_API_KEY` — optional. Without it, intents are parsed by the keyword
   rules only. With it, Gemini is tried first and the rules are the fallback.
