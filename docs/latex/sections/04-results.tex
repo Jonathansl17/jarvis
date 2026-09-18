@@ -39,7 +39,6 @@ too small for a single split.
     Flight delay, schedule only (kept) & 50\,000 flights & 0.050 & 36.0 & 56.6 & minutes \\
     Flight delay, with departure delay & 50\,000 flights & 0.952 & 8.9 & 12.7 & minutes \\
     Avocado, random forest (kept) & 4\,563 random weeks & 0.898 & 0.091 & 0.128 & USD \\
-    Avocado, single tree, depth 10 & 4\,563 random weeks & 0.749 & 0.146 & 0.201 & USD \\
     Avocado, random forest & 1\,296 weeks of 2018 & 0.410 & 0.188 & 0.235 & USD \\
     Body fat, 3 predictors (kept) & 59 men & 0.583 & 3.87 & 4.64 & \% fat \\
     Body fat, all 13 predictors & 59 men & 0.602 & 3.83 & 4.53 & \% fat \\
@@ -56,13 +55,13 @@ too small for a single split.
     \toprule
     Model & Test rows & Acc. & Sens. & Spec. & Prec. & AUC \\
     \midrule
-    Churn, MLP oversampled (kept) & 1\,761 customers & 0.755 & 0.745 & 0.759 & 0.527 & 0.831 \\
-    Churn, MLP as is & 1\,761 customers & 0.790 & 0.529 & 0.885 & 0.624 & 0.840 \\
+    Churn, MLP (kept) & 1\,761 customers & 0.790 & 0.529 & 0.885 & 0.624 & 0.840 \\
+    Churn, MLP at threshold 0.3 & 1\,761 customers & 0.762 & 0.745 & 0.768 & 0.537 & 0.840 \\
     Stroke, balanced logistic (kept) & 1\,278 people & 0.751 & 0.806 & 0.748 & 0.140 & 0.843 \\
     Stroke, plain logistic & 1\,278 people & 0.952 & 0.032 & 0.999 & 0.667 & 0.845 \\
     \bottomrule
   \end{tabular}
-  \caption{Binary classifiers at the 0.5 threshold.}
+  \caption{Binary classifiers at the 0.5 threshold, plus the churn network at 0.3 for reference.}
   \label{tab:binary}
 \end{table}
 
@@ -111,14 +110,14 @@ from a patient with a recall of 0.98. All three are recommended to the
 assistant without reservation inside the range of their training data.
 
 \paragraph{Four models are useful screens.}
-Churn (AUC 0.83), stroke (AUC 0.84), cirrhosis-or-not (balanced accuracy
+Churn (AUC 0.84), stroke (AUC 0.84), cirrhosis-or-not (balanced accuracy
 0.76) and body fat (error of 3.9 points) separate their classes or place a
 person in a broad band, and each notebook states the precision or the error
 that makes its answer a reason to look closer rather than a verdict. In
 every one of them the decision that mattered was not the estimator but the
 treatment of the imbalance or of the multicollinearity: balanced weights
 turned a stroke model that found 2 of 62 strokes into one that finds 50,
-oversampling did the same for churn, and dropping ten collinear
+the threshold sweep shows the same lever for churn, and dropping ten collinear
 circumferences made the body fat slopes readable at no measurable cost.
 
 \paragraph{Three models are honest negatives.}

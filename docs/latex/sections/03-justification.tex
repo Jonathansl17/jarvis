@@ -69,18 +69,18 @@ straight line cannot. The network has two hidden layers of 32 and 16
 neurons and one output neuron that gives a probability.
 
 \paragraph{What the data needed.} Only about one customer in four leaves,
-so a network trained on the data as they are learns to say ``stays'' most
-of the time: it reaches 79\,\% accuracy but catches only half of the
-customers who leave. Copying the leavers in the training set until they
-are as many as the stayers (oversampling) fixes the bias.
+so the network learns to say ``stays'' most of the time: at the usual cut
+of 0.5 it reaches 79\,\% accuracy but catches only half of the customers
+who leave. The notebook sweeps the threshold and shows that the ranking
+behind the probabilities is good (AUC 0.84): lowering the cut to 0.3 finds
+three leavers out of four at the price of twice the false alarms.
 
-\paragraph{What is kept.} The oversampled network. It finds three out of
-four leavers instead of one in two, at the cost of more false alarms.
-Since a retention call is cheap and a lost customer is expensive, that is
-the right trade. The notebook also notes that a simple logistic regression
-does about as well on this data, which means churn here depends on facts
-that act one at a time (contract type, tenure, payment method) rather than
-on complicated combinations.
+\paragraph{What is kept.} The network at the 0.5 threshold, which is the
+most accurate cut, with the probability stored so the company can lower the
+threshold when a retention call is cheap next to a lost customer. The
+weak number is stated plainly: about four customers in ten on the list
+would not have left, so the list is a set of customers worth a call, not a
+verdict.
 
 \subsection{Wine quality: $k$ nearest neighbours}
 
@@ -183,8 +183,8 @@ samples and averages them, which keeps what the trees learn and cancels
 what they memorise.
 
 \paragraph{What the model found.} The forest of 200 trees explains 90\,\%
-of the price with an average error of nine cents, against 80\,\% for the
-best single tree. The type of avocado is by far the most important fact
+of the price with an average error of nine cents, and its out-of-bag
+score agrees. The type of avocado is by far the most important fact
 (organic costs about half a dollar more), followed by the quantities sold
 and the season.
 
