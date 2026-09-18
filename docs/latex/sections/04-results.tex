@@ -4,16 +4,16 @@
 \subsection{Model metrics}
 
 Tables~\ref{tab:forecast} to \ref{tab:recall} gather the metrics of the
-model kept in each notebook, next to the literal model built first when the
-two differ. Every figure is computed on rows the model never saw: a 25\,\%
+model kept in each notebook; Section~\ref{sec:justification} compares each
+one with the literal model built first. Every figure is computed on rows the model never saw: a 25\,\%
 random test split for most notebooks, a chronological hold-out for the two
 series, and five-fold cross-validation for hepatitis, whose sick classes are
 too small for a single split.
 
-\begin{table}[htbp]
+\begin{table}[H]
   \centering
   \small
-  \begin{tabular}{@{}llrrr@{}}
+  \begin{tabularx}{\textwidth}{@{}Llrrr@{}}
     \toprule
     Forecast & Window & MAE (USD) & RMSE (USD) & MAPE (\%) \\
     \midrule
@@ -22,72 +22,63 @@ too small for a single split.
     ARIMA(3,1,3) & 7 unseen days, August 2017 & 236.1 & 282.1 & 7.6 \\
     Naive (last price) & 7 unseen days, August 2017 & 233.2 & 284.9 & 7.5 \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
   \caption{Bitcoin forecast against the naive forecast on the two hold-outs.}
   \label{tab:forecast}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
   \centering
   \small
-  \begin{tabularx}{\textwidth}{@{}lLrrrl@{}}
+  \begin{tabularx}{\textwidth}{@{}Lrrrl@{}}
     \toprule
-    Model & Test rows & $R^2$ & MAE & RMSE & Units \\
+    Model & $R^2$ & MAE & RMSE & Units \\
     \midrule
-    Car price, log model (kept) & 72 cars in range & 0.954 & 0.65 & 1.03 & lakhs \\
-    Car price, raw price & 72 cars in range & 0.807 & 1.23 & 2.11 & lakhs \\
-    Flight delay, schedule only (kept) & 50\,000 flights & 0.050 & 36.0 & 56.6 & minutes \\
-    Flight delay, with departure delay & 50\,000 flights & 0.952 & 8.9 & 12.7 & minutes \\
-    Avocado, random forest (kept) & 4\,563 random weeks & 0.898 & 0.091 & 0.128 & USD \\
-    Avocado, random forest & 1\,296 weeks of 2018 & 0.410 & 0.188 & 0.235 & USD \\
-    Body fat, 3 predictors (kept) & 59 men & 0.583 & 3.87 & 4.64 & \% fat \\
-    Body fat, all 13 predictors & 59 men & 0.602 & 3.83 & 4.53 & \% fat \\
+    Car price, log model & 0.954 & 0.65 & 1.03 & lakhs \\
+    Avocado, random forest & 0.898 & 0.091 & 0.128 & USD \\
+    Body fat, 3 predictors & 0.583 & 3.87 & 4.64 & \% fat \\
+    Flight delay, schedule only & 0.050 & 36.0 & 56.6 & minutes \\
     \bottomrule
   \end{tabularx}
-  \caption{Regression results. The avocado forest's out-of-bag $R^2$ is 0.893; the adjusted $R^2$ of the two body fat models is 0.561 and 0.487.}
+  \caption{Kept regression models on their test rows.}
   \label{tab:regressions}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
   \centering
   \small
-  \begin{tabular}{@{}llrrrrr@{}}
+  \begin{tabularx}{\textwidth}{@{}Lrrrrr@{}}
     \toprule
-    Model & Test rows & Acc. & Sens. & Spec. & Prec. & AUC \\
+    Model & Acc. & Sens. & Spec. & Prec. & AUC \\
     \midrule
-    Churn, MLP (kept) & 1\,761 customers & 0.790 & 0.529 & 0.885 & 0.624 & 0.840 \\
-    Churn, MLP at threshold 0.3 & 1\,761 customers & 0.762 & 0.745 & 0.768 & 0.537 & 0.840 \\
-    Stroke, balanced logistic (kept) & 1\,278 people & 0.751 & 0.806 & 0.748 & 0.140 & 0.843 \\
-    Stroke, plain logistic & 1\,278 people & 0.952 & 0.032 & 0.999 & 0.667 & 0.845 \\
+    Churn, MLP & 0.790 & 0.529 & 0.885 & 0.624 & 0.840 \\
+    Stroke, balanced logistic & 0.751 & 0.806 & 0.748 & 0.140 & 0.843 \\
     \bottomrule
-  \end{tabular}
-  \caption{Binary classifiers at the 0.5 threshold, plus the churn network at 0.3 for reference.}
+  \end{tabularx}
+  \caption{Kept binary classifiers at the 0.5 threshold.}
   \label{tab:binary}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
   \centering
   \small
-  \begin{tabularx}{\textwidth}{@{}lLlrr@{}}
+  \begin{tabularx}{\textwidth}{@{}Llrr@{}}
     \toprule
-    Model & Question & Evaluated on & Acc. & Bal.\ acc. \\
+    Model & Question & Acc. & Bal.\ acc. \\
     \midrule
-    Wine, $k$-NN, $k=39$ (kept) & 3 bands & 1\,333 test wines & 0.589 & 0.547 \\
-    Wine, $k$-NN, $k=5$ & 7 scores & 1\,333 test wines & 0.513 & 0.230 \\
-    Cirrhosis, SVM (kept) & stage 4 or earlier & 103 test patients & 0.777 & 0.758 \\
-    Cirrhosis, SVM tuned & stages 1 to 4 & 103 test patients & 0.447 & 0.424 \\
-    Hepatitis, Gaussian NB, log labs (kept) & 4 categories & 608 people, 5-fold CV & 0.934 & 0.709 \\
-    Hepatitis, Gaussian NB, raw labs & 4 categories & 608 people, 5-fold CV & 0.914 & 0.653 \\
+    Wine, $k$-NN, $k=39$ & 3 bands & 0.589 & 0.547 \\
+    Cirrhosis, SVM & stage 4 or earlier & 0.777 & 0.758 \\
+    Hepatitis, Gaussian NB, log labs & 4 categories & 0.934 & 0.709 \\
     \bottomrule
   \end{tabularx}
-  \caption{Multi-class classifiers.}
+  \caption{Kept multi-class classifiers.}
   \label{tab:multiclass}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
   \centering
   \small
-  \begin{tabularx}{\textwidth}{@{}lL@{}}
+  \begin{tabularx}{\textwidth}{@{}Ll@{}}
     \toprule
     Kept model & Recall by class \\
     \midrule
