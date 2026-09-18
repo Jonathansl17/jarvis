@@ -68,6 +68,17 @@ coefficient for CNG rests on two cars and is reported as unknown.
 straight line cannot. The network has two hidden layers of 32 and 16
 neurons and one output neuron that gives a probability.
 
+\paragraph{Why ReLU.} The activation of the hidden neurons is set
+explicitly. The notebook tries the four that scikit-learn offers
+(identity, logistic, tanh and ReLU) with the same architecture, on the
+training data alone, and they land within one standard deviation of each
+other: a cross-validated AUC between 0.830 and 0.839 with a fold moving it
+by about 0.014. The identity row matches the rest, which says the churn
+signal is largely linear, but a network with no non-linearity is a logistic
+regression and is not kept. Among the non-linear three ReLU is kept because
+its gradient does not fade on the positive side, and the other two buy
+nothing measurable here in exchange for their saturating sums.
+
 \paragraph{What the data needed.} Only about one customer in four leaves,
 so the network learns to say ``stays'' most of the time: at the usual cut
 of 0.5 it reaches 79\,\% accuracy but catches only half of the customers
