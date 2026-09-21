@@ -24,7 +24,7 @@ AudioCallback = Callable[..., None]
 StreamFactory = Callable[[AudioCallback], sd.InputStream]
 
 
-def _open_default_input_stream(callback: AudioCallback) -> sd.InputStream:
+def open_default_input_stream(callback: AudioCallback) -> sd.InputStream:
     """Open (without starting) a mono float32 input stream at the whisper rate."""
     return sd.InputStream(
         samplerate=STT_SAMPLE_RATE_HZ, channels=_RECORDING_CHANNELS, dtype=_RECORDING_DTYPE, callback=callback
@@ -34,7 +34,7 @@ def _open_default_input_stream(callback: AudioCallback) -> sd.InputStream:
 class AudioRecorder:
     """Records mono microphone audio at `STT_SAMPLE_RATE_HZ` between calls."""
 
-    def __init__(self, open_stream: StreamFactory = _open_default_input_stream) -> None:
+    def __init__(self, open_stream: StreamFactory = open_default_input_stream) -> None:
         self._open_stream = open_stream
         self._chunks: list[npt.NDArray[np.float32]] = []
         self._stream: sd.InputStream | None = None
