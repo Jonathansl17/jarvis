@@ -11,8 +11,12 @@ Windows and macOS.
 
 The app has its own virtual environment, separate from the one the
 notebooks and the API share (see the root `README.md`). It needs Tk and
-PortAudio from the system (`sudo apt install python3-tk libportaudio2` on
-Ubuntu/Debian).
+PortAudio from the system: `sudo apt install python3-tk libportaudio2` on
+Ubuntu/Debian, `sudo pacman -S tk portaudio` on Arch, `sudo dnf install
+python3-tkinter portaudio` on Fedora, `brew install python-tk portaudio` on
+macOS; on Windows the python.org installer ships Tk and the `sounddevice`
+wheel bundles PortAudio, so nothing extra is needed. The full table is in
+the root `README.md`.
 
 Linux and macOS, from the repository root:
 

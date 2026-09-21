@@ -52,12 +52,17 @@ from the API.
 
 ### System packages
 
-The app needs Tk (not installable with pip) and PortAudio for the microphone.
-On Ubuntu/Debian:
+The app needs Tk (not installable with pip) and PortAudio for the microphone
+and the voice.
 
-```bash
-sudo apt install python3-tk libportaudio2
-```
+| System | Command |
+|--------|---------|
+| Ubuntu / Debian | `sudo apt install python3-tk libportaudio2` |
+| Fedora | `sudo dnf install python3-tkinter portaudio` |
+| Arch | `sudo pacman -S tk portaudio` |
+| openSUSE | `sudo zypper install python3-tk portaudio` |
+| macOS (Homebrew) | `brew install python-tk portaudio` |
+| Windows | Nothing: the python.org installer ships Tk (keep "tcl/tk and IDLE" checked) and the `sounddevice` wheel bundles PortAudio. |
 
 Without `python3-tk` the app fails at start with
 `ModuleNotFoundError: No module named 'tkinter'`.
