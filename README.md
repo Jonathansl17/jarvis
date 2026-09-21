@@ -14,8 +14,13 @@ notebooks/   one folder per model, each with its executed CRISP-DM notebook
 models/      one .joblib bundle per model, written by the notebooks, read by the API
 api/         FastAPI service, one endpoint per model
 app/         JarvisTEC desktop assistant (CustomTkinter, whisper, Piper, OpenCV)
-docs/        project report (LaTeX; sources in docs/latex, `cd docs/latex && latexmk` writes docs/documentacion.pdf)
+docs/        assignment statement, project report (PDF) and its LaTeX sources
 ```
+
+Each component has its own README with the details: `api/README.md`,
+`app/README.md`.
+
+## Models
 
 | # | Notebook | Technique | Target |
 |---|----------|-----------|--------|
@@ -30,21 +35,64 @@ docs/        project report (LaTeX; sources in docs/latex, `cd docs/latex && lat
 | 9 | `hepatitis_type_classification` | gaussian naive bayes | donor / hepatitis / fibrosis / cirrhosis |
 | 10 | `body_fat_regression` | multiple linear regression | body fat percentage |
 
+## Setup
+
+Python 3.12. The project uses **two virtual environments**, both ignored by
+git:
+
+| venv | Used by | Requirements |
+|------|---------|--------------|
+| `env/` (repository root) | notebooks and API | `notebooks/requirements.txt`, `api/requirements.txt` |
+| `app/env/` | desktop app | `app/requirements.txt` |
+
+The app is kept apart because it pulls heavy, unrelated dependencies
+(whisper, Piper, ONNX Runtime, OpenCV, audio) that the notebooks and the API
+never need, and it is the only piece that may run on a different machine
+from the API.
+
+### System packages
+
+The app needs Tk (not installable with pip) and PortAudio for the microphone.
+On Ubuntu/Debian:
+
+```bash
+sudo apt install python3-tk libportaudio2
+```
+
+Without `python3-tk` the app fails at start with
+`ModuleNotFoundError: No module named 'tkinter'`.
+
+### Environment for notebooks and API
+
+```bash
+python3 -m venv env
+source env/bin/activate
+pip install -r notebooks/requirements.txt -r api/requirements.txt
+```
+
+### Environment for the app
+
+```bash
+python3 -m venv app/env
+source app/env/bin/activate
+pip install -r app/requirements.txt
+cp app/.env.example app/.env   # optional GEMINI_API_KEY
+```
+
+On Windows replace `python3 -m venv X` with `py -m venv X` and
+`source X/bin/activate` with `X\Scripts\activate`.
+
 ## Notebooks
 
 Every notebook downloads its own dataset with `kagglehub` (or from a public
 URL), so it runs unchanged in Google Colab and locally. Open the `.ipynb` in
 Colab and run all cells. The last cells save the trained model to
-`models/<name>.joblib`, two levels above the notebook. The folder `models/` also holds
-`facial_emotion_cnn.onnx` and `haarcascade_frontalface_alt.xml`, used by the app
-to read the user's emotion from the webcam.
-
-Local run:
+`models/<name>.joblib`, two levels above the notebook. The folder `models/`
+also holds `facial_emotion_cnn.onnx` and `haarcascade_frontalface_alt.xml`,
+used by the app to read the user's emotion from the webcam.
 
 ```bash
-python3 -m venv env
 source env/bin/activate
-pip install -r notebooks/requirements.txt
 jupyter notebook notebooks/
 ```
 
@@ -52,7 +100,6 @@ jupyter notebook notebooks/
 
 ```bash
 source env/bin/activate
-pip install -r api/requirements.txt
 cd api
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
@@ -70,11 +117,15 @@ The models are loaded once at startup from `models/`. Nothing is trained on
 request. Configuration through environment variables `MODELS_DIR`, `HOST`,
 `PORT` (see `api/README.md`).
 
-### Request bodies
-
 Optional fields (`null` or omitted) are filled with the value the notebook
-used for missing data. Regressions return `meta.warnings` when an input falls
-outside the range the model was trained on.
+used for missing data. Classifiers answer with `label`, `probability` and the
+`threshold` applied. Regressions answer with the predicted value in the units
+of the notebook (lakhs of rupees, percent of body fat, dollars, minutes) and
+`meta.warnings` when an input falls outside the range the model was trained
+on. Bitcoin answers with a list of `{date, price, lower, upper}`.
+
+<details>
+<summary>Example request per model</summary>
 
 ```bash
 curl -X POST localhost:8000/predict/car_price_regression -H 'content-type: application/json' -d '{
@@ -122,27 +173,35 @@ curl -X POST localhost:8000/predict/telecom_churn_classification -H 'content-typ
 curl -X POST localhost:8000/predict/bitcoin_price_regression -H 'content-type: application/json' -d '{"days": 7}'
 ```
 
-Classifiers answer with `label`, `probability` and the `threshold` applied.
-Regressions answer with the predicted value in the units of the notebook
-(lakhs of rupees, percent of body fat, dollars, minutes). Bitcoin answers with
-a list of `{date, price, lower, upper}`.
+</details>
 
 ## App
 
+With the API running on port 8000, from the repository root:
+
 ```bash
-source env/bin/activate
-pip install -r app/requirements.txt
-cp app/.env.example app/.env   # optional GEMINI_API_KEY
-python -m app                  # with the API running on port 8000
+source app/env/bin/activate
+python -m app
 ```
 
 Speak or type a request such as "JarvisTEC, ¿cuánto vale un carro diesel del
 2015...?" and the assistant picks the model, asks for anything missing,
 calls the API and answers in text and voice. The webcam feed shows the
 detected face and emotion, which changes the tone of the reply and the
-penguin's expression. Details, keys and configuration in `app/README.md`,
-example sentences per model in `app/prompts.txt`. Works on Windows with the
-same steps (`py -m venv env`, `env\Scripts\activate`).
+penguin's expression. The first run downloads the whisper `small` model
+(about 500 MB) and the Spanish Piper voice (about 60 MB) into local caches.
+
+Details, keys and configuration in `app/README.md`; example sentences per
+model in `app/prompts.txt`.
+
+## Docs
+
+`docs/enunciado.pdf` is the assignment statement and `docs/documentacion.pdf`
+the project report. To rebuild the report from its sources:
+
+```bash
+cd docs/latex && latexmk
+```
 
 ## Authors
 

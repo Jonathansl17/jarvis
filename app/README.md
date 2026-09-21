@@ -9,10 +9,16 @@ Windows and macOS.
 
 ## Run
 
+The app has its own virtual environment, separate from the one the
+notebooks and the API share (see the root `README.md`). It needs Tk and
+PortAudio from the system (`sudo apt install python3-tk libportaudio2` on
+Ubuntu/Debian).
+
 Linux and macOS, from the repository root:
 
 ```bash
-source env/bin/activate
+python3 -m venv app/env
+source app/env/bin/activate
 pip install -r app/requirements.txt
 cp app/.env.example app/.env   # fill in GEMINI_API_KEY (optional)
 python -m app
@@ -21,8 +27,8 @@ python -m app
 Windows (PowerShell):
 
 ```powershell
-py -m venv env
-env\Scripts\activate
+py -m venv app\env
+app\env\Scripts\activate
 pip install -r app\requirements.txt
 copy app\.env.example app\.env
 python -m app
