@@ -43,6 +43,10 @@ class AvatarAnimator:
         self._on_frame = on_frame
         self._emotion: Emotion | None = None
         self._stopped = False
+        # Bumped on every scheduled frame; a timer callback whose generation
+        # is stale belongs to a chain that `set_state`/`play_hop_then_idle`
+        # superseded, and must not keep animating alongside the live one.
+        self._generation = 0
         self._playing_event = False
         self._event_indices: list[int] = []
         self._idle_timers = IdleTimers()
@@ -107,10 +111,18 @@ class AvatarAnimator:
         image = self._render(self._state, self._frame_index, self._emotion)
         self._on_frame(image)
         duration_ms = POSES[self._state][self._frame_index].duration_ms
-        self._schedule(duration_ms, lambda: self._advance(duration_ms))
+        self._generation += 1
+        generation = self._generation
+        self._schedule(duration_ms, lambda: self._advance(duration_ms, generation))
 
-    def _advance(self, elapsed_ms: int) -> None:
-        """Move to the next frame: an event step, an idle tick, or a plain loop."""
+    def _advance(self, elapsed_ms: int, generation: int) -> None:
+        """Move to the next frame: an event step, an idle tick, or a plain loop.
+
+        A callback from a superseded chain (older `generation`) returns
+        without rendering or rescheduling, so only one chain ever runs.
+        """
+        if generation != self._generation:
+            return
         if self._playing_event:
             self._advance_event()
         elif self._state is AvatarState.IDLE:
