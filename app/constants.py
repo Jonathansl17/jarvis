@@ -74,3 +74,6 @@ PIPER_VOICE_NAME = "es_MX-claude-high"
 PIPER_MODEL_FILE_SUFFIX = ".onnx"
 PIPER_CONFIG_FILE_SUFFIX = ".onnx.json"
 PIPER_SAMPLE_RATE_HZ = 22050
+# Frames written to the output stream per blocking call (~93 ms at 22050 Hz):
+# also how long a `stop()` takes to cut playback.
+PLAYBACK_BLOCK_FRAMES = 2048

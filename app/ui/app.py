@@ -60,12 +60,14 @@ class JarvisApp(JarvisActions, JarvisDispatchHandlers):
         self.root.mainloop()
 
     def destroy_app(self) -> None:
-        """Release the webcam and audio client, then close the window."""
+        """Release the webcam and both audio streams, then close the window."""
         if self._camera_worker is not None:
             self._camera_worker.stop()
         else:
             self._camera.close()
         self._bridge.stop()
+        self._player.close()
+        self._recorder.close()
         self.root.destroy()
 
     def _build_window(self, startup: WindowStartupState) -> None:
