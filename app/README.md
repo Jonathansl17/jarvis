@@ -80,6 +80,39 @@ hints and the status strip (MIC, EMO, API, STT, IA).
 
 Example sentences for every model, three each, are in `app/prompts.txt`.
 
+## End-to-end smoke test
+
+`app/e2e/` drives the real window — real API, whisper, Piper, webcam —
+through one turn per model and fails if a turn goes unanswered or the Tk
+main thread stalls. It exists because two bugs only showed up after several
+consecutive turns (a PortAudio stream closed mid-playback aborting the
+process, and leaked avatar timers starving the window until it stopped
+repainting); unit tests never see either.
+
+With the API running and the app's environment active, from the repository
+root:
+
+```bash
+python -m app.e2e            # speaks one random sentence per model
+python -m app.e2e --typed    # types them instead (no audio devices needed)
+python -m app.e2e --seed 7   # replay a run: same random pick per model
+```
+
+Each run picks **one of the three sentences of every model at random** from
+`app/prompts.txt` and prints the seed first, so a failing pick can be
+replayed with `--seed`. In voice mode nobody has to talk: each sentence is
+synthesized by Piper and handed to whisper as if it had been recorded, so
+the microphone stream, the transcription and the full reply path run for
+real. Leave the window alone while it runs (about three minutes).
+
+Per turn it prints the camera frames reaching the window per second, the
+idle callbacks per second (Tk repaints from the idle queue; if this drops
+to zero the window has frozen even if timers still fire), whether a reply
+arrived, and any main-thread stall longer than `--stall` seconds (default
+0.4) with the Python stack it was stuck in. It ends with `PASS` or `FAIL`
+and exits non-zero on failure. `--interval` sets the seconds between turns
+(default 16).
+
 ## Layout of the package
 
 ```
@@ -93,6 +126,7 @@ speech/                whisper speech-to-text, Piper text-to-speech
 emotion/               camera, haar cascade face locator, ONNX emotion classifier
 workers/               camera thread, listening and speaking coroutines
 ui/                    CustomTkinter window, bridge to the asyncio thread, widgets, avatar renderer
+e2e/                   end-to-end smoke test (`python -m app.e2e`), see above
 ```
 
 ## Adding an eleventh model

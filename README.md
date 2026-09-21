@@ -192,7 +192,9 @@ penguin's expression. The first run downloads the whisper `small` model
 (about 500 MB) and the Spanish Piper voice (about 60 MB) into local caches.
 
 Details, keys and configuration in `app/README.md`; example sentences per
-model in `app/prompts.txt`.
+model in `app/prompts.txt`. `python -m app.e2e` runs an end-to-end smoke
+test of the app, one random example sentence per model, spoken (see
+`app/README.md`).
 
 ## Docs
 
