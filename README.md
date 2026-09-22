@@ -201,21 +201,19 @@ model in `app/prompts.txt`.
 
 ### End-to-end smoke test
 
-Drives the real window through one turn per model and fails if a turn goes
-unanswered or the interface thread stalls. With the API running on port
-8000 and the app's environment active, from the repository root:
+With the API running on port 8000 and the app's environment active, from
+the repository root:
 
 ```bash
-python -m app.e2e            # speaks one random sentence per model (Piper -> whisper)
-python -m app.e2e --typed    # types them instead; no microphone or speakers needed
-python -m app.e2e --seed 7   # replay a run with the same random pick per model
+python -m app.e2e
 ```
 
-Each run picks one of the three sentences of every model in
-`app/prompts.txt` at random and prints the seed first, so a failing pick
-can be replayed with `--seed`. Leave the window alone while it runs (about
-three minutes); it ends with `PASS` or `FAIL` and exits non-zero on
-failure. What each printed column means is in `app/README.md`.
+It opens the real window and speaks one random example sentence per model
+(one of the three in `app/prompts.txt`, synthesized by Piper and
+transcribed by whisper), ten turns in about three minutes, no options.
+Leave the window alone while it runs. It ends with `PASS` or `FAIL` and
+exits non-zero if a turn went unanswered or the interface thread stalled.
+What each printed column means is in `app/README.md`.
 
 ## Docs
 

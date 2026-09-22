@@ -1,10 +1,10 @@
 """Drives the real window through one turn per model and judges the run.
 
-Each turn either types the sentence and presses Enter, or presses the mic,
-holds it, and releases it with the sentence queued on the scripted recorder
-(so whisper transcribes real speech). Between turns the health monitor's
-counters are logged; at the end the run passes only if every turn was
-answered and the main thread never stalled after startup.
+Each turn presses the mic, holds it, and releases it with the sentence
+queued on the scripted recorder (so whisper transcribes real speech).
+Between turns the health monitor's counters are logged; at the end the run
+passes only if every turn was answered and the main thread never stalled
+after startup.
 """
 
 import time
@@ -42,13 +42,13 @@ class SmokeDriver:
         self._timing = timing
         self._log = log
         self._prompts: list[ModelPrompt] = []
-        self._recorder: ScriptedSpeechRecorder | None = None
+        self._recorder: ScriptedSpeechRecorder | None = None  # Set by `run()`.
         self._index = 0
         self._answered = 0
         self._stalls = 0
         self.passed = False
 
-    def run(self, prompts: list[ModelPrompt], recorder: ScriptedSpeechRecorder | None,
+    def run(self, prompts: list[ModelPrompt], recorder: ScriptedSpeechRecorder,
             startup_delay_seconds: float) -> None:
         """Start the monitor and the first turn once the window has settled."""
         self._prompts = prompts
@@ -64,12 +64,8 @@ class SmokeDriver:
         if self._index >= len(self._prompts):
             self._finish()
             return
-        prompt = self._prompts[self._index]
+        self._press_mic_and_speak(self._prompts[self._index].text)
         self._index += 1
-        if self._recorder is None:
-            self._type_and_send(prompt.text)
-        else:
-            self._press_mic_and_speak(prompt.text)
         self._app.root.after(int(self._timing.turn_interval_seconds * _MILLISECONDS), self._begin_turn)
 
     def _report_turn(self, health: HealthSnapshot) -> None:
@@ -84,10 +80,6 @@ class SmokeDriver:
         ))
         for stall in health.stalls:
             self._log(_STALL_LINE.format(seconds=stall.seconds, stack=stall.stack))
-
-    def _type_and_send(self, text: str) -> None:
-        self._app.input_row.entry.insert(0, text)
-        self._app.on_send()
 
     def _press_mic_and_speak(self, text: str) -> None:
         assert self._recorder is not None

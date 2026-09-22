@@ -97,25 +97,22 @@ With the API running and the app's environment active, from the repository
 root:
 
 ```bash
-python -m app.e2e            # speaks one random sentence per model
-python -m app.e2e --typed    # types them instead (no audio devices needed)
-python -m app.e2e --seed 7   # replay a run: same random pick per model
+python -m app.e2e
 ```
 
 Each run picks **one of the three sentences of every model at random** from
-`app/prompts.txt` and prints the seed first, so a failing pick can be
-replayed with `--seed`. In voice mode nobody has to talk: each sentence is
-synthesized by Piper and handed to whisper as if it had been recorded, so
-the microphone stream, the transcription and the full reply path run for
-real. Leave the window alone while it runs (about three minutes).
+`app/prompts.txt` and prints the seed it used. Nobody has to talk: each
+sentence is synthesized by Piper and handed to whisper as if it had been
+recorded, so the microphone stream, the transcription and the full reply
+path run for real. There are no options. Leave the window alone while it
+runs (about three minutes).
 
 Per turn it prints the camera frames reaching the window per second, the
 idle callbacks per second (Tk repaints from the idle queue; if this drops
 to zero the window has frozen even if timers still fire), whether a reply
-arrived, and any main-thread stall longer than `--stall` seconds (default
-0.4) with the Python stack it was stuck in. It ends with `PASS` or `FAIL`
-and exits non-zero on failure. `--interval` sets the seconds between turns
-(default 16).
+arrived, and any main-thread stall longer than 0.4 s with the Python stack
+it was stuck in. It ends with `PASS` or `FAIL` and exits non-zero on
+failure.
 
 ## Layout of the package
 
