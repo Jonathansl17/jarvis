@@ -197,9 +197,25 @@ penguin's expression. The first run downloads the whisper `small` model
 (about 500 MB) and the Spanish Piper voice (about 60 MB) into local caches.
 
 Details, keys and configuration in `app/README.md`; example sentences per
-model in `app/prompts.txt`. `python -m app.e2e` runs an end-to-end smoke
-test of the app, one random example sentence per model, spoken (see
-`app/README.md`).
+model in `app/prompts.txt`.
+
+### End-to-end smoke test
+
+Drives the real window through one turn per model and fails if a turn goes
+unanswered or the interface thread stalls. With the API running on port
+8000 and the app's environment active, from the repository root:
+
+```bash
+python -m app.e2e            # speaks one random sentence per model (Piper -> whisper)
+python -m app.e2e --typed    # types them instead; no microphone or speakers needed
+python -m app.e2e --seed 7   # replay a run with the same random pick per model
+```
+
+Each run picks one of the three sentences of every model in
+`app/prompts.txt` at random and prints the seed first, so a failing pick
+can be replayed with `--seed`. Leave the window alone while it runs (about
+three minutes); it ends with `PASS` or `FAIL` and exits non-zero on
+failure. What each printed column means is in `app/README.md`.
 
 ## Docs
 
